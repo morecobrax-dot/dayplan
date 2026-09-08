@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "app-starter",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "http-server", "-c-1", "."],
+      "port": 8391,
+      "autoPort": true
+    }
+  ]
+}

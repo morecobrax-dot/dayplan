@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- APP-META-BEGIN — derived from APP_CONFIG by `npm run config:sync`. Do not hand-edit. -->
+<title>App Starter</title>
+<meta name="description" content="An opinionated, offline-capable mobile app foundation.">
+<meta name="apple-mobile-web-app-title" content="Starter">
+<meta name="theme-color" content="#0B0F16">
+<!-- APP-META-END -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* =========================================================
+   DESIGN TOKENS
+   ---------------------------------------------------------
+   Four layers, and they are meant to be edited in order:
+
+     1 BRAND    what a new product changes
+     2 SEMANTIC roles derived from brand — rarely changed
+     3 SCALE    type, space, radius, motion, layout, touch
+     4 DOMAIN   deliberately empty; a product adds its own
+
+   Rules enforced by the contract suite (npm run verify):
+     - no font-family literal outside layer 1
+     - no raw font-size outside the type scale, except lines
+       explicitly marked /* fs-exempt: reason *\/
+   ========================================================= */
+:root{
+  /* ---- 1 · BRAND ------------------------------------------------
+     Change these to rebrand. Nothing else needs to move.
+     Fonts are system stacks on purpose: no network request, no
+     silent fallback, nothing to cache offline. To use a webfont,
+     add one <link> and change --font-ui / --font-display here. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-ui);
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --brand-accent: #4CC2FF;
+  --brand-accent-deep: #2E6BFF;
+
+  /* The ground and the surfaces that sit on it. These are literal values,
+     not computed from --brand-ground, because the steps between them were
+     chosen for contrast rather than for arithmetic. Retheming means editing
+     this ramp — five values, all here. Changing only the ground and leaving
+     the ramp behind is what makes a rebrand look half-finished. */
+  --brand-ground: #0B0F16;
+  --brand-surface: #121824;
+  --brand-surface-raised: #1A2230;
+  --brand-surface-sunken: #0A0E14;
+  --brand-border: #2A3547;
+
+  /* ---- 2 · SEMANTIC --------------------------------------------
+     Roles, not colours. Components only ever reference these, so a
+     component never needs editing to change the look. */
+  --bg: var(--brand-ground);
+  --surface: var(--brand-surface);
+  --surface-raised: var(--brand-surface-raised);
+  --surface-sunken: var(--brand-surface-sunken);
+  --border: var(--brand-border);
+  --border-quiet: rgba(42,53,71,0.55);
+  --edge-hi: rgba(238,241,245,0.05);
+
+  --text: #EEF1F5;
+  --text-dim: #9AA6B8;
+  /* Measured at ~4.1:1 on --surface. Recessive to --text-dim, still
+     comfortably readable at micro sizes. */
+  --text-faint: #7A8598;
+
+  --accent: var(--brand-accent);
+  --accent-deep: var(--brand-accent-deep);
+  --accent-soft: rgba(76,194,255,0.12);
+  /* Text drawn ON a filled accent surface. */
+  --accent-contrast: #06121F;
+
+  --success: #4B9C81;
+  --success-soft: rgba(75,156,129,0.12);
+  --warning: #BD9260;
+  --warning-soft: rgba(189,146,96,0.12);
+  --danger: #E5675F;
+  --danger-soft: rgba(229,103,95,0.12);
+
+  --gradient-accent: linear-gradient(135deg, var(--accent), var(--accent-deep));
+
+  /* ---- 3 · SCALE ------------------------------------------------ */
+  /* Type: one token per role, so two labels of the same kind cannot
+     drift half a pixel apart. */
+  --fs-micro: 11px;     /* uppercase labels, units, axis marks */
+  --fs-meta: 12px;      /* secondary metadata beside a value */
+  --fs-support: 13px;   /* supporting sentences */
+  --fs-body: 15px;      /* body copy */
+  --fs-title: 17px;     /* the name of a row or card */
+  --fs-section: 20px;   /* a heading that is not a page title */
+  --fs-display: 26px;   /* page title */
+  --fs-metric: 30px;    /* the number a screen exists to show */
+
+  --lh-tight: 1.2;
+  --lh-body: 1.55;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.20);
+  --shadow-md: 0 3px 10px rgba(0,0,0,0.24);
+  --shadow-lg: 0 10px 28px rgba(0,0,0,0.38);
+  --shadow-accent: 0 2px 12px rgba(76,194,255,0.20);
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 0.12s;
+  --dur: 0.20s;
+  --dur-slow: 0.30s;
+
+  --layout-max: 640px;
+  --tabbar-h: 58px;
+  /* The interactive target, not necessarily the visible mark. */
+  --touch-min: 44px;
+  /* iOS Safari zooms a focused field below this and never zooms back. */
+  --input-min-size: 16px;
+
+  /* Read once here so no component hand-writes env() arithmetic. */
+  --inset-top: env(safe-area-inset-top, 0px);
+  --inset-bottom: env(safe-area-inset-bottom, 0px);
+  --inset-left: env(safe-area-inset-left, 0px);
+  --inset-right: env(safe-area-inset-right, 0px);
+
+  --bp-sm: 380px;
+  --bp-md: 560px;
+  --bp-lg: 900px;
+
+  /* ---- 4 · DOMAIN ----------------------------------------------
+     Empty by design. A product defines its own category colours
+     here — status hues, chart series, whatever it actually needs. */
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+*{ box-sizing: border-box; }
+html, body{ margin: 0; padding: 0; }
+
+html{
+  /* `manipulation` removes double-tap-to-zoom and the legacy 300ms tap
+     delay while leaving single taps, scrolling, panning and pinch-to-zoom
+     intact. Pinch is deliberately preserved — it is an accessibility
+     affordance, and only accidental double-tap zoom was the problem. */
+  touch-action: manipulation;
+  /* Safari inflates text when a block's width grows relative to the
+     viewport — which is exactly what rotating to landscape does. 100%,
+     not `none`: this switches off Safari's AUTOMATIC inflation while
+     leaving pinch zoom and Dynamic Type working. `none` would take
+     those away. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body{ touch-action: manipulation; }
+
+body{
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(var(--tabbar-h) + var(--space-xl) + var(--inset-bottom));
+  padding-left: var(--inset-left);
+  padding-right: var(--inset-right);
+}
+
+button{ font-family: inherit; font-size: var(--fs-body); }
+input, textarea, select{ font-family: inherit; }
+h1, h2, h3, h4{ margin: 0; font-family: var(--font-display); line-height: var(--lh-tight); }
+p{ margin: 0; }
+
+*:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+/* A sheet is focused programmatically when it opens, so a screen reader
+   announces the dialog and Tab starts inside it. That is not a keyboard
+   focus and should not paint a ring around the whole surface. */
+.sheet:focus, .sheet:focus-visible{ outline: none; }
+
+::selection{ background: var(--accent); color: var(--accent-contrast); }
+
+/* Scrollbar chrome only. Scrolling, panning and snapping are untouched. */
+*::-webkit-scrollbar{ width: 0; height: 0; display: none; }
+*{ scrollbar-width: none; -ms-overflow-style: none; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+.sr-only{
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* =========================================================
+   APP SHELL
+   ========================================================= */
+/* Scrolled content passes under this painted band rather than colliding
+   with the status text or Dynamic Island. Zero height on desktop. */
+.top-scrim{
+  position: fixed; top: 0; left: 0; right: 0; z-index: 55; pointer-events: none;
+  height: calc(var(--inset-top) + 10px);
+  background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) calc(100% - 10px), transparent);
+}
+
+.app-header{
+  padding: var(--space-xl) var(--space-lg) var(--space-md);
+  padding-top: calc(var(--space-xl) + var(--inset-top));
+  border-bottom: 1px solid var(--border);
+  max-width: var(--layout-max);
+  margin: 0 auto;
+}
+.header-row{ display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.app-title{
+  font-size: var(--fs-display); font-weight: 700; letter-spacing: -0.02em; color: var(--text);
+}
+.header-actions{ display: flex; align-items: center; gap: var(--space-xs); }
+
+.view{
+  display: none;
+  max-width: var(--layout-max);
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-lg) var(--space-2xl);
+}
+.view.active{ display: block; }
+
+.section-label{
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint);
+  margin: var(--space-xl) 0 var(--space-sm);
+}
+.section-label:first-child{ margin-top: 0; }
+
+.page-intro{ color: var(--text-dim); font-size: var(--fs-support); margin-bottom: var(--space-lg); }
+
+/* ---- Bottom navigation ---- */
+.tabbar{
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--inset-bottom);
+  padding-left: var(--inset-left);
+  padding-right: var(--inset-right);
+  max-width: var(--layout-max); margin: 0 auto;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.18);
+}
+.tab-btn{
+  flex: 1; background: none; border: none; cursor: pointer;
+  min-height: var(--touch-min);
+  padding: var(--space-sm) var(--space-xs);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--text-faint);
+  font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.02em;
+  transition: color var(--dur-fast) var(--ease);
+}
+.tab-btn .glyph{ display: flex; align-items: center; justify-content: center; height: 20px; }
+.tab-btn.active{ color: var(--accent); }
+.tab-btn:hover{ color: var(--text-dim); }
+.tab-btn.active:hover{ color: var(--accent); }
+
+/* =========================================================
+   CONTROLS
+   ========================================================= */
+.btn-primary{
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+  min-height: var(--touch-min); padding: var(--space-md) var(--space-lg);
+  background: var(--gradient-accent); color: var(--accent-contrast);
+  border: none; border-radius: var(--radius-md);
+  font-size: var(--fs-support); font-weight: 700; cursor: pointer;
+  box-shadow: var(--shadow-accent);
+  transition: transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+}
+.btn-primary:hover{ opacity: 0.94; }
+.btn-primary:active{ transform: scale(0.98); }
+.btn-primary:disabled{ opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+.btn-secondary{
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+  min-height: var(--touch-min); padding: var(--space-md) var(--space-lg);
+  background: none; color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-size: var(--fs-support); font-weight: 600; cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.btn-secondary:hover{ border-color: var(--accent); color: var(--accent); }
+.btn-secondary:active{ transform: scale(0.98); }
+.btn-danger{ color: var(--danger); }
+.btn-danger:hover{ border-color: var(--danger); color: var(--danger); }
+
+.btn-block{ width: 100%; }
+
+/* The visible mark can be small; the target never is. */
+.icon-btn{
+  width: var(--touch-min); height: var(--touch-min); flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; border-radius: var(--radius-md);
+  color: var(--text-dim); cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.icon-btn:hover{ color: var(--accent); background: var(--accent-soft); }
+
+/* ---- Form controls ---- */
+.field{ margin-bottom: var(--space-lg); }
+.field label, .form-label{
+  display: block; margin-bottom: var(--space-sm);
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint);
+}
+input[type="text"], input[type="number"], input[type="date"], textarea, select{
+  width: 100%;
+  background: var(--surface-raised); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-md);
+  /* fs-exempt: iOS Safari zooms the page whenever a focused field is below
+     16px and does not zoom back out. Applied once here rather than per
+     field, so a newly added input cannot reintroduce it. */
+  font-size: 16px;
+  min-height: var(--touch-min);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+textarea{ resize: vertical; min-height: 90px; line-height: var(--lh-body); }
+input:focus, textarea:focus, select:focus{
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+input.field-error, textarea.field-error{ border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+.field-message{
+  display: none; margin-top: var(--space-xs);
+  font-size: var(--fs-meta); color: var(--danger);
+}
+.field-message.show{ display: block; }
+.field-hint{ margin-top: var(--space-xs); font-size: var(--fs-meta); color: var(--text-faint); }
+
+/* ---- Segmented control ---- */
+.segmented{
+  display: flex; gap: var(--space-xs); padding: var(--space-xs);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); margin-bottom: var(--space-lg);
+}
+.segmented button{
+  flex: 1; min-height: var(--touch-min);
+  background: none; border: none; border-radius: var(--radius-sm);
+  color: var(--text-faint); font-size: var(--fs-support); font-weight: 600; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.segmented button[aria-selected="true"]{ background: var(--accent-soft); color: var(--accent); }
+
+/* ---- Toggle ---- */
+.toggle-row{
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);
+  min-height: var(--touch-min); padding: var(--space-md) 0;
+}
+.toggle{
+  position: relative; flex-shrink: 0;
+  width: 48px; height: 28px; border-radius: var(--radius-pill);
+  background: var(--surface-raised); border: 1px solid var(--border);
+  cursor: pointer; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.toggle::after{
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--text-faint); transition: transform var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.toggle[aria-checked="true"]{ background: var(--accent-soft); border-color: var(--accent); }
+.toggle[aria-checked="true"]::after{ transform: translateX(20px); background: var(--accent); }
+
+/* =========================================================
+   SURFACES
+   ========================================================= */
+.panel{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+}
+
+/* ---- List row: the one row pattern, used for items and settings ---- */
+.list{ display: flex; flex-direction: column; gap: var(--space-sm); }
+.list-row{
+  display: flex; align-items: center; gap: var(--space-md); width: 100%;
+  min-height: var(--touch-min);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); cursor: pointer; text-align: left;
+  color: var(--text);
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.list-row:hover{ border-color: var(--accent); }
+.list-row-main{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.list-row-title{
+  font-size: var(--fs-title); font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.list-row-desc{
+  font-size: var(--fs-meta); color: var(--text-faint);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.list-row-arrow{ flex-shrink: 0; color: var(--text-faint); display: flex; }
+
+/* ---- Detail row: label / value pairs on a detail page ---- */
+.detail-row{
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-lg);
+  padding: var(--space-md) 0; border-bottom: 1px solid var(--border-quiet);
+}
+.detail-row:last-child{ border-bottom: none; }
+.detail-label{
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint);
+  flex-shrink: 0;
+}
+.detail-value{ font-size: var(--fs-support); color: var(--text); text-align: right; }
+.detail-value.block{ text-align: left; white-space: pre-wrap; }
+
+/* ---- Stat ---- */
+/* 96px, not 120: three stats have to fit across a 375px phone, which is the
+   narrowest device this is designed for. At 120 the third wrapped onto its own
+   row and read as a separate group. */
+.stat-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: var(--space-sm); }
+.stat{
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg);
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+}
+.stat-value{
+  display: block; font-family: var(--font-display);
+  font-size: var(--fs-metric); font-weight: 700; line-height: var(--lh-tight);
+  letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--text);
+}
+.stat-label{
+  display: block; margin-top: var(--space-xs);
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-faint);
+}
+
+/* ---- Badge: status carries a shape and a word, never colour alone ---- */
+.badge{
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+  padding: 3px var(--space-sm); border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+  background: var(--surface-raised); color: var(--text-dim);
+}
+.badge::before{
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+}
+.badge-active{ background: var(--accent-soft); color: var(--accent); }
+.badge-done{ background: var(--success-soft); color: var(--success); }
+
+/* ---- Progress ---- */
+.progress-bar{
+  height: 6px; border-radius: var(--radius-pill);
+  background: var(--surface-raised); overflow: hidden;
+}
+.progress-bar > span{
+  display: block; height: 100%; border-radius: var(--radius-pill);
+  background: var(--accent); transition: width var(--dur-slow) var(--ease);
+}
+.progress-ring{ display: block; }
+.progress-ring-track{ fill: none; stroke: var(--surface-raised); stroke-width: 6; }
+.progress-ring-fill{
+  fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round;
+  transform: rotate(-90deg); transform-origin: 50% 50%;
+  transition: stroke-dashoffset var(--dur-slow) var(--ease);
+}
+
+/* ---- Empty / error / loading states ---- */
+.empty-state{
+  text-align: center; padding: var(--space-2xl) var(--space-lg);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
+}
+.empty-state .empty-mark{ color: var(--text-faint); opacity: 0.7; margin-bottom: var(--space-xs); }
+.empty-title{ font-size: var(--fs-title); font-weight: 600; color: var(--text); }
+.empty-body{ font-size: var(--fs-support); color: var(--text-faint); max-width: 34ch; }
+.empty-state .btn-primary{ margin-top: var(--space-md); }
+
+.notice{
+  display: flex; gap: var(--space-md); align-items: flex-start;
+  padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-lg);
+  border: 1px solid var(--border); border-left: 3px solid var(--text-faint);
+  border-radius: var(--radius-md); background: var(--surface);
+  font-size: var(--fs-support); color: var(--text-dim);
+}
+.notice-warning{ border-left-color: var(--warning); background: var(--warning-soft); }
+.notice-error{ border-left-color: var(--danger); background: var(--danger-soft); }
+.notice strong{ color: var(--text); display: block; margin-bottom: 2px; }
+
+.loading{
+  display: flex; align-items: center; justify-content: center; gap: var(--space-md);
+  padding: var(--space-2xl); color: var(--text-faint); font-size: var(--fs-support);
+}
+.spinner{
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
+/* =========================================================
+   OVERLAY ENGINE — presentation
+   ---------------------------------------------------------
+   One overlay mechanism, two presentations:
+     .overlay              a bottom SHEET — a decision or short form
+     .overlay.overlay-page a full PAGE    — a destination you navigate into
+   Scroll lock, focus, stacking and ARIA are handled once in JS for
+   both, never per-surface.
+   ========================================================= */
+.overlay{
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(6,7,9,0.72);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  display: none; align-items: flex-end;
+  /* A flick that runs out of sheet must stop, not hand itself to the page
+     underneath — that is what makes two screens feel simultaneously alive. */
+  overscroll-behavior: contain;
+}
+.overlay.open{ display: flex; }
+
+.sheet{
+  position: relative;
+  background: var(--surface); width: 100%;
+  max-height: calc(92dvh - var(--inset-top));
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-top: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  max-width: var(--layout-max); margin: 0 auto;
+  animation: sheet-in var(--dur) var(--ease) both;
+}
+@keyframes sheet-in{
+  from{ transform: translateY(16px); opacity: 0.6; }
+  to{ transform: translateY(0); opacity: 1; }
+}
+
+/* A page fills the screen. Its own back control is the way out. */
+.overlay-page{ align-items: stretch; }
+.overlay-page .sheet{
+  height: 100%; max-height: none; border-radius: 0; border-top: none;
+  animation: page-in var(--dur) var(--ease) both;
+}
+@keyframes page-in{
+  from{ transform: translateX(14px); opacity: 0; }
+  to{ transform: translateX(0); opacity: 1; }
+}
+/* The inset gets a band painted in the page's own ground, so scrolled
+   content passes UNDER it rather than through it. One paint: no listener,
+   no measurement, no blur. */
+.overlay-page .sheet::before{
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: var(--inset-top);
+  background: var(--surface); z-index: 6; pointer-events: none;
+}
+
+.page-topbar{
+  display: flex; align-items: center; gap: var(--space-sm); flex-shrink: 0;
+  padding: calc(var(--space-sm) + var(--inset-top)) var(--space-sm) var(--space-sm);
+  border-bottom: 1px solid var(--border);
+  /* A header that owns the inset must be opaque and must outrank the band,
+     so a title is never covered by it. */
+  background: var(--surface); position: relative; z-index: 7;
+}
+.page-topbar-title{
+  flex: 1; text-align: center; font-size: var(--fs-title); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.page-topbar .icon-btn{ color: var(--accent); }
+.topbar-spacer{ width: var(--touch-min); flex-shrink: 0; }
+
+.sheet-scroll{
+  overflow-y: auto; flex: 1; min-height: 0;
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  -webkit-overflow-scrolling: touch;
+  /* Every scrolling surface inside an overlay keeps its scroll to itself. */
+  overscroll-behavior: contain;
+}
+/* The scroll surface owns the top inset on a page — unless the page brings
+   its own header, which already absorbed it. Paying it twice leaves a blank
+   strip below the topbar. */
+.overlay-page .sheet-scroll{ padding-top: calc(var(--space-lg) + var(--inset-top)); }
+.page-topbar + .sheet-scroll{ padding-top: var(--space-lg); }
+
+.sheet h2{ font-size: var(--fs-section); font-weight: 700; margin-bottom: var(--space-xs); }
+.sheet-sub{ color: var(--text-faint); font-size: var(--fs-support); margin-bottom: var(--space-lg); }
+
+.sheet-actions{
+  display: flex; gap: var(--space-sm); flex-shrink: 0;
+  padding: var(--space-md) var(--space-lg) calc(var(--space-md) + var(--inset-bottom));
+  border-top: 1px solid var(--border); background: var(--surface);
+}
+.sheet-actions > *{ flex: 1; }
+/* One obvious primary action: it takes the room, the secondary yields. */
+.sheet-actions .btn-secondary{ flex: 0 0 auto; min-width: 96px; }
+
+/* iOS needs position:fixed, not merely overflow:hidden. The scroll offset
+   is captured and restored by hand — see lockBackgroundScroll(). */
+body.scroll-locked{
+  position: fixed; left: 0; right: 0; width: 100%;
+  overflow: hidden; overscroll-behavior: none;
+}
+
+/* =========================================================
+   TOAST
+   ---------------------------------------------------------
+   Non-blocking confirmation of something that already happened.
+   It never asks a question and never blocks — that is what the
+   confirmation sheet is for.
+   ========================================================= */
+.toast-host{
+  position: fixed; z-index: 80;
+  left: 0; right: 0;
+  bottom: calc(var(--tabbar-h) + var(--space-md) + var(--inset-bottom));
+  padding: 0 var(--space-lg);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
+  pointer-events: none;
+}
+.toast{
+  width: 100%; max-width: 420px;
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--border); border-left: 3px solid var(--text-faint);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-support); color: var(--text);
+  pointer-events: auto;
+  animation: toast-in var(--dur) var(--ease) both;
+}
+.toast.leaving{ animation: toast-out var(--dur-fast) var(--ease) both; }
+.toast-mark{ flex-shrink: 0; display: flex; }
+.toast-success{ border-left-color: var(--success); }
+.toast-success .toast-mark{ color: var(--success); }
+.toast-warning{ border-left-color: var(--warning); }
+.toast-warning .toast-mark{ color: var(--warning); }
+.toast-error{ border-left-color: var(--danger); }
+.toast-error .toast-mark{ color: var(--danger); }
+.toast-neutral .toast-mark{ color: var(--text-faint); }
+@keyframes toast-in{
+  from{ transform: translateY(10px); opacity: 0; }
+  to{ transform: translateY(0); opacity: 1; }
+}
+@keyframes toast-out{
+  from{ transform: translateY(0); opacity: 1; }
+  to{ transform: translateY(6px); opacity: 0; }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (min-width: 560px){
+  .view{ padding-left: var(--space-xl); padding-right: var(--space-xl); }
+  .app-header{ padding-left: var(--space-xl); padding-right: var(--space-xl); }
+}
+/* Landscape on a phone: reclaim vertical space rather than clipping. */
+@media (orientation: landscape) and (max-height: 500px){
+  .overlay:not(.overlay-page) .sheet{ max-height: 100dvh; }
+  .sheet-scroll{ padding-top: var(--space-md); padding-bottom: var(--space-md); }
+  .app-header{ padding-top: calc(var(--space-md) + var(--inset-top)); padding-bottom: var(--space-sm); }
+}
+</style>
+</head>
+<body>
+
+<div class="top-scrim" aria-hidden="true"></div>
+
+<div id="app" style="display:none">
+
+  <header class="app-header">
+    <div class="header-row">
+      <h1 class="app-title" id="appTitle">App Starter</h1>
+      <div class="header-actions">
+        <button class="icon-btn" id="updatesBtn" aria-label="What's new" onclick="openUpdates()"></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HOME — hierarchy, summary, one obvious primary action -->
+  <main class="view active" id="view-home">
+    <div id="storageNotice"></div>
+    <div class="section-label">Overview</div>
+    <div class="stat-grid" id="homeStats"></div>
+    <div class="section-label">Recent</div>
+    <div id="homeRecent"></div>
+  </main>
+
+  <!-- ITEMS — list, filter, empty state -->
+  <main class="view" id="view-items">
+    <div class="segmented" role="tablist" aria-label="Filter items" id="itemFilter">
+      <button role="tab" aria-selected="true" data-filter="all" onclick="setItemFilter('all')">All</button>
+      <button role="tab" aria-selected="false" data-filter="active" onclick="setItemFilter('active')">Active</button>
+      <button role="tab" aria-selected="false" data-filter="done" onclick="setItemFilter('done')">Done</button>
+    </div>
+    <div id="itemList"></div>
+  </main>
+
+  <!-- SETTINGS — nested pages, data ownership, honest danger zone -->
+  <main class="view" id="view-settings">
+    <div class="section-label">Data</div>
+    <div class="list">
+      <button class="list-row" onclick="openDataSettings()">
+        <span class="list-row-main">
+          <span class="list-row-title">Backup &amp; data</span>
+          <span class="list-row-desc">Export, import, or reset what this app has stored</span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="section-label">About</div>
+    <div class="list">
+      <button class="list-row" onclick="openUpdates()">
+        <span class="list-row-main">
+          <span class="list-row-title">What's new</span>
+          <span class="list-row-desc">Every release, most recent first</span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+      <button class="list-row" onclick="openComponents()">
+        <span class="list-row-main">
+          <span class="list-row-title">Components</span>
+          <span class="list-row-desc">Every primitive this app ships</span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="section-label">Identity</div>
+    <div class="panel" id="identityPanel"></div>
+  </main>
+
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">
+      <span class="glyph" aria-hidden="true"></span>Home
+    </button>
+    <button class="tab-btn" data-tab="items" onclick="switchTab('items')">
+      <span class="glyph" aria-hidden="true"></span>Items
+    </button>
+    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">
+      <span class="glyph" aria-hidden="true"></span>Settings
+    </button>
+  </nav>
+</div>
+
+<!-- ITEM DETAIL — a destination, so it is a page -->
+<div class="overlay overlay-page" id="itemDetailOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeItemDetail()" aria-label="Back"></button>
+      <div class="page-topbar-title">Item</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="itemDetailBody"></div>
+    <div class="sheet-actions">
+      <button class="btn-secondary btn-danger" onclick="deleteItemFromDetail()">Delete</button>
+      <button class="btn-primary" onclick="editItemFromDetail()">Edit item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM FORM — create and edit are the same page -->
+<div class="overlay overlay-page" id="itemFormOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeItemForm()" aria-label="Back"></button>
+      <div class="page-topbar-title" id="itemFormTitle">New item</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll">
+      <div class="field">
+        <label for="itemTitle">Title</label>
+        <input type="text" id="itemTitle" maxlength="80" placeholder="What is this?" autocomplete="off"
+               aria-describedby="itemTitleError">
+        <div class="field-message" id="itemTitleError" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="itemNote">Note</label>
+        <textarea id="itemNote" maxlength="500" placeholder="Anything worth remembering."></textarea>
+        <div class="field-hint">Optional. Up to 500 characters.</div>
+      </div>
+      <div class="field">
+        <span class="form-label" id="itemStatusLabel">Status</span>
+        <div class="segmented" role="radiogroup" aria-labelledby="itemStatusLabel" id="itemStatusSeg">
+          <button role="radio" aria-checked="true" aria-selected="true" data-status="active"
+                  onclick="setFormStatus('active')">Active</button>
+          <button role="radio" aria-checked="false" aria-selected="false" data-status="done"
+                  onclick="setFormStatus('done')">Done</button>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-secondary" onclick="closeItemForm()">Cancel</button>
+      <button class="btn-primary" id="itemSaveBtn" onclick="saveItemForm()">Save item</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRMATION — one sheet, every destructive decision -->
+<div class="overlay" id="confirmOverlay" onclick="backdropDismiss(event, closeConfirm)">
+  <div class="sheet" role="alertdialog" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+    <div class="sheet-scroll">
+      <h2 id="confirmTitle">Are you sure?</h2>
+      <div class="sheet-sub" id="confirmMessage"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="confirmCancel" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-primary" id="confirmAccept" onclick="acceptConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- BACKUP & DATA -->
+<div class="overlay overlay-page" id="dataOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeDataSettings()" aria-label="Back"></button>
+      <div class="page-topbar-title">Backup &amp; data</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll">
+      <p class="page-intro">Everything this app stores lives on this device, under its own namespace. Export a copy you control.</p>
+      <div class="stat-grid" id="dataStats"></div>
+      <div class="section-label">Backup</div>
+      <div class="list">
+        <button class="list-row" onclick="exportData()">
+          <span class="list-row-main">
+            <span class="list-row-title">Export backup</span>
+            <span class="list-row-desc">Save everything to a file</span>
+          </span>
+          <span class="list-row-arrow" aria-hidden="true"></span>
+        </button>
+        <button class="list-row" onclick="document.getElementById('importInput').click()">
+          <span class="list-row-main">
+            <span class="list-row-title">Import backup</span>
+            <span class="list-row-desc">Merge a backup in — nothing is overwritten</span>
+          </span>
+          <span class="list-row-arrow" aria-hidden="true"></span>
+        </button>
+      </div>
+      <input type="file" id="importInput" accept="application/json,.json" class="sr-only" onchange="importData(this)">
+      <div class="field-hint" style="margin-top:var(--space-md)">Importing merges by id, so re-importing the same file changes nothing and an older backup can never delete newer records.</div>
+      <div class="section-label">Danger zone</div>
+      <div class="field-hint" style="margin-bottom:var(--space-md)">This permanently erases everything this app has stored. It cannot be undone.</div>
+      <button class="btn-secondary btn-danger btn-block" onclick="resetAllData()">Reset all data</button>
+    </div>
+  </div>
+</div>
+
+<!-- WHAT'S NEW -->
+<div class="overlay overlay-page" id="updatesOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeUpdates()" aria-label="Back"></button>
+      <div class="page-topbar-title">What's new</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="updatesBody"></div>
+  </div>
+</div>
+
+<!-- COMPONENTS — the primitives, rendered from the same code the app uses -->
+<div class="overlay overlay-page" id="componentsOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeComponents()" aria-label="Back"></button>
+      <div class="page-topbar-title">Components</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="componentsBody"></div>
+  </div>
+</div>
+
+<div class="toast-host" id="toastHost" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+/* =========================================================
+   APPLICATION IDENTITY — the single source of truth
+   ---------------------------------------------------------
+   Everything in this file, in manifest.webmanifest, in sw.js and
+   in package.json is derived from this object.
+
+   Static files cannot read it at runtime, so `npm run config:sync`
+   writes it into them and `npm run config:verify` (part of
+   `npm run verify`) fails the build if they ever drift.
+
+   Changing a product's identity is: edit APP_CONFIG, run
+   `npm run config:sync`. Nothing else.
+   ========================================================= */
+const APP_CONFIG = {
+  id: 'app-starter',
+  name: 'App Starter',
+  shortName: 'Starter',
+  description: 'An opinionated, offline-capable mobile app foundation.',
+  themeColor: '#0B0F16',
+  backgroundColor: '#0B0F16'
+};
+
+/* APP_ID has to be safe as a storage key prefix, a Cache Storage name and a
+   package name all at once. Rejecting bad input loudly beats silently
+   sanitising it into something the developer did not choose — a quietly
+   rewritten id is how two products end up sharing a namespace. */
+const APP_ID_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+function validateAppId(id){
+  if(typeof id !== 'string' || !id) return 'APP_CONFIG.id must be a non-empty string.';
+  if(id.length > 40) return 'APP_CONFIG.id must be 40 characters or fewer.';
+  if(!APP_ID_PATTERN.test(id)){
+    return 'APP_CONFIG.id must be lowercase letters, digits and single hyphens, ' +
+           'starting with a letter (e.g. "personal-savings"). Got: ' + id;
+  }
+  return null;
+}
+
+/* =========================================================
+   RELEASE NOTES
+   ---------------------------------------------------------
+   The newest entry IS the application version. Nothing else
+   declares one, so the app, the service-worker cache and this
+   list cannot drift apart — a contract test proves it.
+
+   AUTHORING A NEW ENTRY
+   1. SORT changes into newFeatures / improvements / fixes.
+      Genuinely new -> newFeatures. Something that already existed
+      and got better -> improvements. Broken behaviour now correct
+      -> fixes. Omit empty categories.
+   2. TRANSLATE each line into user-facing benefit language.
+      "Optimised render cycle" -> "Screens respond faster."
+   3. VERSION it: x.0 a fundamental change; 1.X a new capability;
+      1.X.1 polish; 1.X.2 fixes only.
+   4. TITLE it plainly in two to four words. Not clever — just what
+      the release is about.
+   5. Every entry should answer: what changed, why it matters, and
+      what someone can do now that they could not before.
+
+   New products replace this array wholesale. See NEW-PROJECT.md.
+   ========================================================= */
+const APP_UPDATES = [
+  {
+    id: 'v0-1-0',
+    version: '0.1.0',
+    title: 'Foundation',
+    date: '2026-08-31',
+    summary: 'The starter foundation: shell, overlays, storage, feedback and a demo domain.',
+    newFeatures: [
+      'Mobile app shell with safe-area handling, bottom navigation and full-page detail flows',
+      'One overlay engine driving scroll lock, focus, stacking and accessibility for every sheet and page',
+      'Namespaced local storage with honest failure reporting and versioned migrations',
+      'Toast and confirmation primitives, replacing native browser dialogs',
+      'Installable as a progressive web app, and usable offline'
+    ],
+    improvements: [],
+    fixes: []
+  }
+];
+
+const APP_VERSION = APP_UPDATES[0].version;
+
+/* Namespaces derive from APP_ID so a developer never synchronises four
+   unrelated strings by hand. Two products on one github.io origin share an
+   origin — and localStorage and Cache Storage are keyed by origin, not by
+   path — so this prefix is the only thing keeping them apart. */
+const STORAGE_NAMESPACE = APP_CONFIG.id + '.';
+const CACHE_NAMESPACE = APP_CONFIG.id + '-v' + APP_VERSION;
+
+const KEYS = {
+  schemaVersion: 'sys.schemaVersion',
+  backupPrefix:  'sys.backup.',
+  lastSeenUpdate:'ui.lastSeenUpdate',
+  items:         'data.items',
+  itemDraft:     'draft.item'
+};
+
+/* =========================================================
+   STORAGE
+   ---------------------------------------------------------
+   One access layer. Three backends, tried in order, chosen by
+   probe — the rest of the app never knows which one it got.
+
+   Rules that are never broken here:
+   - Every key is prefixed with APP_ID, inside this module, so no
+     call site can accidentally write an unnamespaced key.
+   - set() returns true only if the write genuinely landed. Callers
+     rely on that to avoid telling someone their data is saved when
+     it is not.
+   - Absent data stays absent. A missing key is a new user, not a
+     corrupted one, and is never "repaired" with defaults.
+   ========================================================= */
+const Store = (function(){
+  const PREFIX = STORAGE_NAMESPACE;
+  const mem = {};
+  let backend = 'memory';
+
+  function detect(){
+    try{
+      const probe = PREFIX + '__probe__';
+      window.localStorage.setItem(probe, '1');
+      window.localStorage.removeItem(probe);
+      return 'local';
+    }catch(e){ return 'memory'; }
+  }
+  backend = detect();
+
+  return {
+    prefix(){ return PREFIX; },
+    backend(){ return backend; },
+    isPersistent(){ return backend !== 'memory'; },
+
+    get(key){
+      try{
+        if(backend === 'local'){
+          const v = window.localStorage.getItem(PREFIX + key);
+          return v === null ? null : v;
+        }
+        return mem[key] === undefined ? null : mem[key];
+      }catch(e){ return null; }
+    },
+
+    set(key, value){
+      try{
+        if(backend === 'local'){ window.localStorage.setItem(PREFIX + key, value); return true; }
+        mem[key] = value; return true;
+      }catch(e){ return false; }
+    },
+
+    remove(key){
+      try{
+        if(backend === 'local'){ window.localStorage.removeItem(PREFIX + key); return true; }
+        delete mem[key]; return true;
+      }catch(e){ return false; }
+    },
+
+    /* Namespaced keys only, with the prefix stripped. A key belonging to
+       another app on the same origin is invisible here by construction. */
+    listKeys(){
+      try{
+        if(backend === 'local'){
+          const out = [];
+          for(let i = 0; i < window.localStorage.length; i++){
+            const k = window.localStorage.key(i);
+            if(k && k.indexOf(PREFIX) === 0) out.push(k.slice(PREFIX.length));
+          }
+          return out;
+        }
+        return Object.keys(mem);
+      }catch(e){ return []; }
+    },
+
+    /* JSON in one place, so a corrupt value degrades to the caller's
+       fallback instead of throwing somewhere far from the read. */
+    getJSON(key, fallback){
+      const raw = this.get(key);
+      if(raw === null) return fallback;
+      try{ const v = JSON.parse(raw); return v === null ? fallback : v; }
+      catch(e){ return fallback; }
+    },
+    setJSON(key, value){
+      try{ return this.set(key, JSON.stringify(value)); }
+      catch(e){ return false; }
+    }
+  };
+})();
+
+/* =========================================================
+   SCHEMA MIGRATION
+   ---------------------------------------------------------
+   Bump DATA_SCHEMA_VERSION only when the SHAPE of stored data
+   changes, and add a migration keyed by the version it upgrades
+   FROM. Migrations run in sequence, so data written by any older
+   version reaches current safely.
+
+   A backup of every key is taken before any migration runs. A
+   failure restores it and surfaces a warning rather than leaving
+   partial data in place.
+   ========================================================= */
+const DATA_SCHEMA_VERSION = 1;
+
+/* Upgrades FROM the keyed version TO the next. Return nothing on success,
+   throw on failure. Example:
+     1: function migrateV1toV2(){ ...reshape data written by v1... } */
+const MIGRATIONS = {};
+
+let migrationWarning = null;
+
+function runMigrations(){
+  const stored = Store.get(KEYS.schemaVersion);
+  /* No stored version and no data is a first run, not an upgrade. */
+  if(stored === null){
+    Store.set(KEYS.schemaVersion, String(DATA_SCHEMA_VERSION));
+    return { migrated: false, from: null };
+  }
+  let from = parseInt(stored, 10);
+  if(isNaN(from) || from < 1) from = DATA_SCHEMA_VERSION;
+  if(from >= DATA_SCHEMA_VERSION) return { migrated: false, from: from };
+
+  const dataKeys = Store.listKeys().filter(k => k.indexOf(KEYS.backupPrefix) !== 0);
+  const backup = {};
+  dataKeys.forEach(k => { backup[k] = Store.get(k); });
+
+  try{
+    for(let v = from; v < DATA_SCHEMA_VERSION; v++){
+      const fn = MIGRATIONS[v];
+      if(typeof fn === 'function') fn();
+    }
+    Store.set(KEYS.schemaVersion, String(DATA_SCHEMA_VERSION));
+    /* Keep the pre-migration snapshot; it is the only way back. */
+    Object.keys(backup).forEach(k => {
+      if(backup[k] !== null) Store.set(KEYS.backupPrefix + from + '.' + k, backup[k]);
+    });
+    return { migrated: true, from: from };
+  }catch(e){
+    Object.keys(backup).forEach(k => {
+      if(backup[k] === null) Store.remove(k); else Store.set(k, backup[k]);
+    });
+    migrationWarning = 'An update to your saved data could not be completed, so it was ' +
+                       'restored exactly as it was. Nothing was lost.';
+    return { migrated: false, from: from, failed: true };
+  }
+}
+
+/* =========================================================
+   OVERLAY ENGINE  (ported from the audited baseline)
+   ---------------------------------------------------------
+   When a page or sheet is open, the document behind it must stop
+   behaving like a scrollable document.
+
+   This is deliberately ONE mechanism rather than a lock/unlock pair
+   added to each open/close function. Those pair up by hand, and a
+   future overlay that forgets one half reintroduces the bug
+   silently. An observer watching for `.overlay.open` cannot be
+   forgotten, and it is correct for overlays opened from anywhere —
+   including boot and draft restore, which do not go through an
+   open* function at all.
+
+   iOS needs position:fixed, not just overflow:hidden, which is why
+   the scroll offset is captured and restored by hand.
+   ========================================================= */
+let _lockedScrollY = 0;
+let _lockDepth = 0;
+
+function lockBackgroundScroll(){
+  if(_lockDepth++ > 0) return;              // already locked by an outer layer
+  _lockedScrollY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = (-_lockedScrollY) + 'px';
+  document.body.classList.add('scroll-locked');
+}
+function unlockBackgroundScroll(){
+  if(_lockDepth === 0) return;
+  if(--_lockDepth > 0) return;              // a layer above is still open
+  document.body.classList.remove('scroll-locked');
+  document.body.style.top = '';
+  /* Restore exactly where they were. 'instant' matters: a smooth scroll here
+     reads as the page jumping about after the sheet has already gone. */
+  window.scrollTo({ top: _lockedScrollY, behavior: 'instant' });
+}
+
+/* The single source of truth is how many overlays are actually open, so the
+   lock cannot drift out of step with the DOM however an overlay was opened. */
+function syncBackgroundScrollLock(){
+  const open = document.querySelectorAll('.overlay.open').length;
+  if(open > 0 && _lockDepth === 0){ lockBackgroundScroll(); }
+  else if(open === 0 && _lockDepth > 0){ _lockDepth = 1; unlockBackgroundScroll(); }
+  else if(open > 0){ _lockDepth = open; }   // nested layers keep the count honest
+}
+
+/* Which overlays are open, in the order they opened. The last entry is the
+   one on top, and the only one Escape or Tab should act on. */
+let _openSheetStack = [];
+const _sheetOpeners = new Map();
+
+function sheetFocusables(root){
+  return [...root.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.disabled && el.offsetParent !== null);
+}
+
+/* The sheet itself takes focus, not its first field. Focusing an input would
+   throw the keyboard up over the screen just opened, which is the opposite of
+   helpful on a phone. */
+function focusIntoSheet(ov){
+  const sheet = ov.querySelector('.sheet') || ov;
+  try{
+    if(!sheet.hasAttribute('tabindex')) sheet.setAttribute('tabindex', '-1');
+    sheet.focus({ preventScroll: true });
+  }catch(e){}
+}
+
+/* The close path a surface already declares for itself — from its backdrop
+   handler, or from its own back/close button. Nothing is invented: a surface
+   that declares no way out is left alone rather than being torn down by a
+   mechanism that does not know its cleanup. */
+function sheetCloser(ov){
+  const oc = ov.getAttribute('onclick') || '';
+  const m = oc.match(/backdropDismiss\(\s*event\s*,\s*([A-Za-z0-9_]+)\s*\)/);
+  if(m && typeof window[m[1]] === 'function') return window[m[1]];
+  const btn = [...ov.querySelectorAll('button')].find(b =>
+    /^(close|exit|cancel)[A-Z][A-Za-z0-9_]*\(\s*\)\s*;?\s*$/.test(b.getAttribute('onclick') || ''));
+  if(btn) return () => btn.click();
+  return null;
+}
+
+function topOpenSheet(){
+  for(let i = _openSheetStack.length - 1; i >= 0; i--){
+    const ov = document.getElementById(_openSheetStack[i]);
+    if(ov && ov.classList.contains('open')) return ov;
+  }
+  return null;
+}
+
+/* ---------- STACKING IS OPEN ORDER, NOT DOCUMENT ORDER ----------
+   Every .overlay shares one z-index, so the browser paints them in document
+   order. A surface opened from a surface declared later in the file is
+   therefore painted UNDERNEATH it: you tap Edit, see nothing change, and have
+   to close the page you are on to discover the editor waiting behind it.
+
+   The order that matters is the order things were opened in, which
+   _openSheetStack already records. Painting from that stack makes the newest
+   surface the top one by construction — for every overlay, however it was
+   opened. Same reasoning as the scroll lock: one mechanism that cannot be
+   forgotten, rather than a rule each surface has to remember. */
+const OVERLAY_Z_BASE = 60;
+function paintSheetStackOrder(){
+  _openSheetStack.forEach((id, i) => {
+    const ov = document.getElementById(id);
+    if(ov) ov.style.zIndex = String(OVERLAY_Z_BASE + i);
+  });
+}
+
+/* Tearing the surface beneath down is the other tempting fix, and it is
+   wrong: closing a detail opened from a list would then drop you on the root
+   tab instead of back in the list. The surface underneath is not a hidden
+   destination — the top of the stack is always what was just navigated to —
+   it is the way back. It stays open, painted below, inert to screen readers
+   through the aria-modal the stack sets, and revealed again on close. */
+function syncSheetAccessibility(){
+  const openNow = [...document.querySelectorAll('.overlay.open')].map(o => o.id);
+
+  openNow.forEach(id => {
+    if(_openSheetStack.indexOf(id) !== -1) return;
+    const ov = document.getElementById(id);
+    if(!ov) return;
+    const opener = document.activeElement;
+    _sheetOpeners.set(id, (opener && opener !== document.body) ? opener : null);
+    ov.setAttribute('role', ov.getAttribute('role') || 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    _openSheetStack.push(id);
+    focusIntoSheet(ov);
+  });
+
+  _openSheetStack.slice().forEach(id => {
+    if(openNow.indexOf(id) !== -1) return;
+    _openSheetStack = _openSheetStack.filter(x => x !== id);
+    const ov = document.getElementById(id);
+    if(ov) ov.removeAttribute('aria-modal');
+    const opener = _sheetOpeners.get(id);
+    _sheetOpeners.delete(id);
+    /* Only return focus if the control that opened this is still on screen —
+       after saving, the button that started it may no longer exist. */
+    if(opener && document.contains(opener) && opener.offsetParent !== null){
+      try{ opener.focus({ preventScroll: true }); }catch(e){}
+    }
+    const ov2 = document.getElementById(id);
+    if(ov2) ov2.style.zIndex = '';          // back to the stylesheet's value
+  });
+
+  paintSheetStackOrder();
+}
+
+/* One handler for the whole app. Escape closes the top surface through that
+   surface's own close path; Tab stays inside it. Escape is handled before
+   anything else can swallow it, so there is no way to be trapped. */
+function initSheetKeyboard(){
+  document.addEventListener('keydown', ev => {
+    if(ev.key !== 'Escape' && ev.key !== 'Tab') return;
+    const ov = topOpenSheet();
+    if(!ov) return;
+
+    if(ev.key === 'Escape'){
+      const close = sheetCloser(ov);
+      if(!close) return;                       // a surface with no declared exit
+      ev.preventDefault();
+      try{ close(); }catch(e){}
+      return;
+    }
+
+    const items = sheetFocusables(ov);
+    if(!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    const active = document.activeElement;
+    if(!ov.contains(active)){
+      ev.preventDefault();
+      (ev.shiftKey ? last : first).focus({ preventScroll: true });
+      return;
+    }
+    if(ev.shiftKey && active === first){
+      ev.preventDefault(); last.focus({ preventScroll: true });
+    } else if(!ev.shiftKey && active === last){
+      ev.preventDefault(); first.focus({ preventScroll: true });
+    }
+  });
+}
+
+function initOverlayEngine(){
+  /* Boot must not depend on this. Without an observer the app still runs — it
+     simply does not lock the page behind a surface, which is a far smaller
+     failure than not starting. */
+  if(typeof MutationObserver === 'undefined') return null;
+  try{
+    const obs = new MutationObserver(() => {
+      syncBackgroundScrollLock();
+      syncSheetAccessibility();
+    });
+    /* Watching the body subtree rather than a fixed list of overlays means an
+       overlay added to the DOM later is covered too, without a second
+       observer. Records are already batched per microtask, so a list re-render
+       costs one callback, not one per node. */
+    obs.observe(document.body, {
+      attributes: true, attributeFilter: ['class'], subtree: true, childList: true
+    });
+    syncBackgroundScrollLock();             // an overlay restored during boot
+    syncSheetAccessibility();
+    initSheetKeyboard();
+    return obs;
+  }catch(e){ return null; }
+}
+
+function backdropDismiss(e, closeFn){
+  if(e.target === e.currentTarget) closeFn();
+}
+
+function openOverlay(id){
+  const ov = document.getElementById(id);
+  if(ov) ov.classList.add('open');
+}
+function closeOverlay(id){
+  const ov = document.getElementById(id);
+  if(ov) ov.classList.remove('open');
+}
+
+/* =========================================================
+   TOAST
+   ---------------------------------------------------------
+   Says that something already happened. It never asks a question,
+   never blocks, and never needs dismissing to continue.
+
+   The host is one aria-live region, so a screen reader announces
+   new text without moving focus. At most MAX_TOASTS are on screen;
+   the oldest leaves rather than letting a stack grow without limit.
+   ========================================================= */
+const TOAST_MS = 3200;
+const MAX_TOASTS = 3;
+const TOAST_VARIANTS = ['neutral', 'success', 'warning', 'error'];
+
+function toast(message, variant){
+  const host = document.getElementById('toastHost');
+  if(!host) return null;
+  const kind = TOAST_VARIANTS.indexOf(variant) === -1 ? 'neutral' : variant;
+
+  while(host.children.length >= MAX_TOASTS) dismissToast(host.firstElementChild, true);
+
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + kind;
+  el.innerHTML = '<span class="toast-mark" aria-hidden="true">' + toastMark(kind) + '</span>' +
+                 '<span class="toast-text">' + escapeHtml(message) + '</span>';
+  host.appendChild(el);
+
+  const reduced = prefersReducedMotion();
+  el._timer = setTimeout(() => dismissToast(el, reduced), TOAST_MS);
+  return el;
+}
+
+function dismissToast(el, immediate){
+  if(!el || el._leaving) return;
+  el._leaving = true;
+  if(el._timer) clearTimeout(el._timer);
+  if(immediate){ if(el.parentNode) el.remove(); return; }
+  el.classList.add('leaving');
+  setTimeout(() => { if(el.parentNode) el.remove(); }, 140);
+}
+
+function toastMark(kind){
+  if(kind === 'success') return checkIcon(16);
+  if(kind === 'error' || kind === 'warning') return warnIcon(16);
+  return infoIcon(16);
+}
+
+function prefersReducedMotion(){
+  try{
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }catch(e){ return false; }
+}
+
+/* =========================================================
+   CONFIRMATION
+   ---------------------------------------------------------
+   One sheet for every consequential decision, on the shared
+   overlay engine — so scroll lock, focus trapping, focus return
+   and stacking are the engine's job here too, not a second
+   half-implementation.
+
+   Returns a Promise<boolean>. Cancel is always the safe outcome,
+   which is why Escape and a backdrop tap both resolve false.
+   ========================================================= */
+let _confirmResolve = null;
+
+function confirmAction(opts){
+  const o = opts || {};
+  const ov = document.getElementById('confirmOverlay');
+  if(!ov) return Promise.resolve(false);
+
+  /* A second call while one is open would strand the first promise. */
+  if(_confirmResolve){ const prev = _confirmResolve; _confirmResolve = null; prev(false); }
+
+  document.getElementById('confirmTitle').textContent = o.title || 'Are you sure?';
+  document.getElementById('confirmMessage').textContent = o.message || '';
+  const accept = document.getElementById('confirmAccept');
+  const cancel = document.getElementById('confirmCancel');
+  accept.textContent = o.confirmLabel || 'Confirm';
+  cancel.textContent = o.cancelLabel || 'Cancel';
+  /* A destructive confirm does not get the accent gradient — the loud button
+     should not be the one that destroys something. */
+  accept.className = o.destructive ? 'btn-secondary btn-danger' : 'btn-primary';
+
+  openOverlay('confirmOverlay');
+  return new Promise(resolve => { _confirmResolve = resolve; });
+}
+
+function settleConfirm(result){
+  closeOverlay('confirmOverlay');
+  const r = _confirmResolve;
+  _confirmResolve = null;
+  if(r) r(result);
+}
+function closeConfirm(){ settleConfirm(false); }
+function acceptConfirm(){ settleConfirm(true); }
+
+/* =========================================================
+   ICONS
+   ---------------------------------------------------------
+   Inline SVG on a 16x16 grid, stroked in currentColor so every
+   icon inherits its colour from context. No icon font, no sprite
+   sheet, no request.
+   ========================================================= */
+function svg(paths, size){
+  const px = size || 16;
+  return '<svg width="' + px + '" height="' + px + '" viewBox="0 0 16 16" ' +
+    'aria-hidden="true" focusable="false" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
+}
+function checkIcon(s){ return svg('<path d="M3.2 8.4 6.4 11.6 12.8 4.8"/>', s); }
+function closeIcon(s){ return svg('<path d="M4 4l8 8M12 4l-8 8"/>', s); }
+function chevronRight(s){ return svg('<path d="M6 3.5 10.5 8 6 12.5"/>', s); }
+function chevronLeft(s){ return svg('<path d="M10 3.5 5.5 8 10 12.5"/>', s); }
+function plusIcon(s){ return svg('<path d="M8 3.4v9.2M3.4 8h9.2"/>', s); }
+function pencilIcon(s){ return svg('<path d="M11.1 2.9a1.55 1.55 0 0 1 2.2 2.2L5.6 12.8l-3 .8.8-3z"/>', s); }
+function trashIcon(s){ return svg('<path d="M2.8 4.4h10.4M6.2 4.4V3.2h3.6v1.2M4.4 4.4l.6 8.4h6l.6-8.4"/>', s); }
+function warnIcon(s){ return svg('<path d="M8 2.6 14.2 13H1.8L8 2.6Z"/><path d="M8 6.6v2.6"/><circle cx="8" cy="11.3" r="0.75" fill="currentColor" stroke="none"/>', s); }
+function infoIcon(s){ return svg('<circle cx="8" cy="8" r="5.8"/><path d="M8 7.4v3.4"/><circle cx="8" cy="5.2" r="0.75" fill="currentColor" stroke="none"/>', s); }
+function sparkIcon(s){ return svg('<path d="M8 2.4 9.4 6.6 13.6 8 9.4 9.4 8 13.6 6.6 9.4 2.4 8 6.6 6.6Z"/>', s); }
+function inboxIcon(s){ return svg('<path d="M2.4 8.6h3l1 2h3.2l1-2h3"/><path d="M3.6 3.4h8.8l1.6 5.2v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-4z"/>', s); }
+
+function tabIcon(name){ return svg((Domain.tabIcons && Domain.tabIcons[name]) || '', 18); }
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+let currentTab = 'home';
+
+function switchTab(tab){
+  /* Validate before touching anything. Clearing every view and then throwing
+     on a missing one leaves a header, a tab bar and nothing in between — with
+     currentTab already overwritten, so no tap can recover it. An unknown tab
+     is a no-op and the screen stays. */
+  const view = document.getElementById('view-' + tab);
+  if(!view) return;
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  view.classList.add('active');
+  /* A top-level tab opens at its top. Restoring an arbitrary scroll position
+     leaves someone halfway down a screen they just asked to see, and makes
+     the same tap give a different result each time. */
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* Device back closes the top overlay rather than leaving the app. A counter,
+   not a boolean, because releasing our own history entry fires a popstate
+   that must not be read as a back press. */
+let _pendingSelfPops = 0;
+let _historyDepth = 0;
+
+function pushOverlayHistory(){
+  try{ history.pushState({ appOverlay: true }, ''); _historyDepth++; }catch(e){}
+}
+function releaseOverlayHistory(){
+  if(_historyDepth <= 0) return;
+  _historyDepth--;
+  _pendingSelfPops++;
+  try{ history.back(); }catch(e){ _pendingSelfPops--; }
+}
+
+window.addEventListener('popstate', () => {
+  if(_pendingSelfPops > 0){ _pendingSelfPops--; return; }
+  const ov = topOpenSheet();
+  if(!ov) return;
+  if(_historyDepth > 0) _historyDepth--;   // this pop consumed our entry
+  const close = sheetCloser(ov);
+  if(close){ try{ close(); }catch(e){} }
+  else { ov.classList.remove('open'); }
+});
+
+/* =========================================================
+   FOUNDATION → DOMAIN SEAM
+   ---------------------------------------------------------
+   The only four points where the foundation reaches into a
+   product's own code. Everything above this line is the
+   foundation; everything below it is one replaceable product.
+
+   The defaults are no-ops on purpose: delete the demo section
+   below and the app still boots, into a working but empty
+   shell. That is the property that keeps a product replaceable:
+   the demo is a consumer of the foundation, not part of it.
+
+   A product assigns its own four, and changes nothing else.
+   ========================================================= */
+const Domain = {
+  hydrate(){},   // read your state out of Store
+  render(){},    // paint your screens
+  wire(){},      // attach your own listeners, once, at boot
+  tabIcons: {}   // { <data-tab value>: '<svg path markup>' } for your tabs
+};
+
+/* Foundation-owned. Renders the product's screens plus the parts of the
+   shell that are not the product's business. */
+function renderAll(){
+  Domain.render();
+  renderIdentity();
+  renderUpdatesDot();
+}
+
+/* =========================================================
+   DEMO DOMAIN — Item
+   ---------------------------------------------------------
+   Deliberately close to nothing. It exists to prove the
+   infrastructure works and to show the intended patterns:
+   list, detail, create, edit, delete, validate, persist,
+   confirm, empty state, feedback.
+
+   A new product replaces this whole section, down to the
+   SETTINGS banner, and reassigns the three Domain hooks above.
+   Nothing above this line reads anything below it.
+   ========================================================= */
+const ITEM_STATUSES = ['active', 'done'];
+const STATUS_LABEL = { active: 'Active', done: 'Done' };
+
+let items = [];
+let itemFilter = 'all';
+let editingItemId = null;
+let formStatus = 'active';
+let _draftTimer = null;
+
+function loadItems(){
+  const raw = Store.getJSON(KEYS.items, []);
+  items = Array.isArray(raw) ? raw.filter(isValidItem) : [];
+}
+function isValidItem(it){
+  return it && typeof it === 'object' && typeof it.id === 'string' && typeof it.title === 'string';
+}
+function persistItems(){
+  const ok = Store.setJSON(KEYS.items, items);
+  if(!ok) toast('Could not save — this browser is not storing data.', 'error');
+  return ok;
+}
+function newId(){
+  return 'i_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+function findItem(id){ return items.find(i => i.id === id) || null; }
+
+function visibleItems(){
+  const sorted = items.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  if(itemFilter === 'all') return sorted;
+  return sorted.filter(i => i.status === itemFilter);
+}
+
+function setItemFilter(f){
+  if(ITEM_STATUSES.indexOf(f) === -1 && f !== 'all') return;
+  itemFilter = f;
+  document.querySelectorAll('#itemFilter button').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.filter === f)));
+  renderItems();
+}
+
+function renderHome(){
+  const stats = document.getElementById('homeStats');
+  if(stats){
+    const done = items.filter(i => i.status === 'done').length;
+    stats.innerHTML =
+      statHtml(items.length, 'Items') +
+      statHtml(items.length - done, 'Active') +
+      statHtml(done, 'Done');
+  }
+
+  const recent = document.getElementById('homeRecent');
+  if(!recent) return;
+  if(!items.length){
+    recent.innerHTML = emptyStateHtml({
+      mark: inboxIcon(30),
+      title: 'Nothing here yet',
+      body: 'Items you create show up here, newest first. This demo exists to prove the ' +
+            'shell, storage and forms actually work.',
+      action: 'Create your first item'
+    });
+    return;
+  }
+  const rows = visibleItemsFor(items).slice(0, 3).map(itemRowHtml).join('');
+  recent.innerHTML = '<div class="list">' + rows + '</div>' +
+    '<button class="btn-primary btn-block" style="margin-top:var(--space-lg)" onclick="openItemForm()">' +
+    plusIcon(15) + ' New item</button>';
+}
+function visibleItemsFor(list){
+  return list.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+}
+
+function renderItems(){
+  const host = document.getElementById('itemList');
+  if(!host) return;
+  const list = visibleItems();
+
+  if(!list.length){
+    host.innerHTML = emptyStateHtml({
+      mark: inboxIcon(30),
+      title: itemFilter === 'all' ? 'No items yet' : 'Nothing ' + STATUS_LABEL[itemFilter].toLowerCase(),
+      body: itemFilter === 'all'
+        ? 'Create one to see the list, detail page and form working together.'
+        : 'Change the filter above, or create an item.',
+      action: 'New item'
+    });
+    return;
+  }
+  host.innerHTML = '<div class="list">' + list.map(itemRowHtml).join('') + '</div>' +
+    '<button class="btn-primary btn-block" style="margin-top:var(--space-lg)" onclick="openItemForm()">' +
+    plusIcon(15) + ' New item</button>';
+}
+
+function itemRowHtml(it){
+  const badge = '<span class="badge badge-' + it.status + '">' + STATUS_LABEL[it.status] + '</span>';
+  return '<button class="list-row" onclick="openItemDetail(\'' + escapeAttr(it.id) + '\')">' +
+    '<span class="list-row-main">' +
+      '<span class="list-row-title">' + escapeHtml(it.title) + '</span>' +
+      '<span class="list-row-desc">' + escapeHtml(it.note || 'No note') + '</span>' +
+    '</span>' + badge +
+    '<span class="list-row-arrow" aria-hidden="true">' + chevronRight(15) + '</span>' +
+  '</button>';
+}
+
+function statHtml(value, label){
+  return '<div class="stat"><span class="stat-value">' + value + '</span>' +
+         '<span class="stat-label">' + escapeHtml(label) + '</span></div>';
+}
+
+function emptyStateHtml(o){
+  return '<div class="empty-state">' +
+    (o.mark ? '<span class="empty-mark" aria-hidden="true">' + o.mark + '</span>' : '') +
+    '<span class="empty-title">' + escapeHtml(o.title) + '</span>' +
+    '<span class="empty-body">' + escapeHtml(o.body) + '</span>' +
+    (o.action ? '<button class="btn-primary" onclick="openItemForm()">' + escapeHtml(o.action) + '</button>' : '') +
+  '</div>';
+}
+
+/* ---------- detail ---------- */
+let detailItemId = null;
+
+function openItemDetail(id){
+  const it = findItem(id);
+  if(!it) return;
+  detailItemId = id;
+  const body = document.getElementById('itemDetailBody');
+  body.innerHTML =
+    '<h2>' + escapeHtml(it.title) + '</h2>' +
+    '<div class="sheet-sub"><span class="badge badge-' + it.status + '">' +
+      STATUS_LABEL[it.status] + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label">Note</span></div>' +
+    '<div class="detail-value block" style="margin-bottom:var(--space-lg)">' +
+      escapeHtml(it.note || '—') + '</div>' +
+    '<div class="detail-row"><span class="detail-label">Created</span>' +
+      '<span class="detail-value">' + formatDate(it.createdAt) + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label">Updated</span>' +
+      '<span class="detail-value">' + formatDate(it.updatedAt) + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label">Id</span>' +
+      '<span class="detail-value" style="font-family:var(--font-mono)">' + escapeHtml(it.id) + '</span></div>';
+  pushOverlayHistory();
+  openOverlay('itemDetailOverlay');
+}
+function closeItemDetail(){
+  closeOverlay('itemDetailOverlay');
+  releaseOverlayHistory();
+  detailItemId = null;
+}
+function editItemFromDetail(){
+  const id = detailItemId;
+  closeItemDetail();
+  openItemForm(id);
+}
+async function deleteItemFromDetail(){
+  const it = findItem(detailItemId);
+  if(!it) return;
+  const ok = await confirmAction({
+    title: 'Delete this item?',
+    message: '"' + it.title + '" will be removed from this device. This cannot be undone.',
+    confirmLabel: 'Delete',
+    destructive: true
+  });
+  if(!ok) return;
+  items = items.filter(i => i.id !== it.id);
+  persistItems();
+  closeItemDetail();
+  renderAll();
+  toast('Item deleted', 'success');
+}
+
+/* ---------- form ---------- */
+function openItemForm(id){
+  editingItemId = id || null;
+  const it = id ? findItem(id) : null;
+  document.getElementById('itemFormTitle').textContent = it ? 'Edit item' : 'New item';
+  document.getElementById('itemSaveBtn').textContent = it ? 'Save changes' : 'Create item';
+
+  const draft = !it ? Store.getJSON(KEYS.itemDraft, null) : null;
+  const source = it || draft || { title: '', note: '', status: 'active' };
+
+  document.getElementById('itemTitle').value = source.title || '';
+  document.getElementById('itemNote').value = source.note || '';
+  setFormStatus(source.status === 'done' ? 'done' : 'active');
+  clearFieldError('itemTitle');
+
+  if(draft && !it) toast('Restored your unsaved draft', 'neutral');
+
+  pushOverlayHistory();
+  openOverlay('itemFormOverlay');
+}
+
+/* Leaving without saving keeps the draft; saving discards it. Flushing on the
+   way out of a SAVED form would write the still-populated fields straight back
+   into the draft key that save had just cleared, and the next new item would
+   open pre-filled with the last one. */
+function closeItemForm(){
+  flushDraft();
+  finishItemForm();
+}
+function finishItemForm(){
+  if(_draftTimer){ clearTimeout(_draftTimer); _draftTimer = null; }
+  closeOverlay('itemFormOverlay');
+  releaseOverlayHistory();
+  editingItemId = null;
+}
+function discardDraft(){
+  if(_draftTimer){ clearTimeout(_draftTimer); _draftTimer = null; }
+  Store.remove(KEYS.itemDraft);
+}
+
+function setFormStatus(s){
+  if(ITEM_STATUSES.indexOf(s) === -1) return;
+  formStatus = s;
+  document.querySelectorAll('#itemStatusSeg button').forEach(b => {
+    const on = b.dataset.status === s;
+    b.setAttribute('aria-checked', String(on));
+    b.setAttribute('aria-selected', String(on));
+  });
+}
+
+function readItemForm(){
+  return {
+    title: document.getElementById('itemTitle').value.trim(),
+    note: document.getElementById('itemNote').value.trim(),
+    status: formStatus
+  };
+}
+
+function saveItemForm(){
+  const data = readItemForm();
+  if(!data.title){
+    showFieldError('itemTitle', 'Give this item a title so you can find it again.');
+    return;
+  }
+  const now = new Date().toISOString();
+  if(editingItemId){
+    const it = findItem(editingItemId);
+    if(it){ it.title = data.title; it.note = data.note; it.status = data.status; it.updatedAt = now; }
+  } else {
+    items.push({ id: newId(), title: data.title, note: data.note, status: data.status,
+                 createdAt: now, updatedAt: now });
+  }
+  const saved = persistItems();
+  discardDraft();
+  const wasEdit = !!editingItemId;
+  finishItemForm();
+  renderAll();
+  if(saved) toast(wasEdit ? 'Item updated' : 'Item created', 'success');
+}
+
+/* Drafts live under their own key, never inside the committed collection.
+   That separation is what makes a half-typed item structurally incapable of
+   showing up in the list or a count. */
+function scheduleDraftSave(){
+  if(editingItemId) return;                 // an edit in progress is not a draft
+  if(_draftTimer) clearTimeout(_draftTimer);
+  _draftTimer = setTimeout(flushDraft, 250);
+}
+function flushDraft(){
+  if(_draftTimer){ clearTimeout(_draftTimer); _draftTimer = null; }
+  if(editingItemId) return;
+  const ov = document.getElementById('itemFormOverlay');
+  if(!ov || !ov.classList.contains('open')) return;
+  const data = readItemForm();
+  if(!data.title && !data.note){ Store.remove(KEYS.itemDraft); return; }
+  Store.setJSON(KEYS.itemDraft, data);
+}
+
+function showFieldError(inputId, message){
+  const el = document.getElementById(inputId);
+  const msg = document.getElementById(inputId + 'Error');
+  if(!el) return;
+  el.classList.add('field-error');
+  el.setAttribute('aria-invalid', 'true');
+  if(msg){ msg.textContent = message; msg.classList.add('show'); }
+  try{ el.focus({ preventScroll: false }); }catch(e){}
+  el.addEventListener('input', function clear(){
+    clearFieldError(inputId);
+    el.removeEventListener('input', clear);
+  }, { once: true });
+}
+function clearFieldError(inputId){
+  const el = document.getElementById(inputId);
+  const msg = document.getElementById(inputId + 'Error');
+  if(el){ el.classList.remove('field-error'); el.removeAttribute('aria-invalid'); }
+  if(msg){ msg.textContent = ''; msg.classList.remove('show'); }
+}
+
+/* ---------- this demo claims the foundation's three seams ---------- */
+Domain.tabIcons = {
+  home:     '<path d=\"M2.6 7.2 8 2.6l5.4 4.6\"/><path d=\"M4 7.6v5.2a.8.8 0 0 0 .8.8h6.4a.8.8 0 0 0 .8-.8V7.6\"/>',
+  items:    '<path d=\"M2.6 4.4h10.8M2.6 8h10.8M2.6 11.6h10.8\"/>',
+  settings: '<circle cx=\"8\" cy=\"8\" r=\"2.2\"/><path d=\"M8 1.8v1.6M8 12.6v1.6M14.2 8h-1.6M3.4 8H1.8M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1M12.4 12.4l-1.1-1.1M4.7 4.7 3.6 3.6\"/>'
+};
+Domain.hydrate = loadItems;
+Domain.render  = () => { renderHome(); renderItems(); };
+Domain.wire    = () => {
+  const form = document.getElementById('itemFormOverlay');
+  if(!form) return;
+  form.addEventListener('input', scheduleDraftSave);
+  form.addEventListener('change', scheduleDraftSave);
+  /* Last-chance flush if the page is torn down mid-edit. */
+  window.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'hidden') flushDraft();
+  });
+  window.addEventListener('pagehide', flushDraft);
+};
+
+/* =========================================================
+   SETTINGS — data ownership
+   ========================================================= */
+function openDataSettings(){
+  renderDataStats();
+  pushOverlayHistory();
+  openOverlay('dataOverlay');
+}
+function closeDataSettings(){ closeOverlay('dataOverlay'); releaseOverlayHistory(); }
+
+function renderDataStats(){
+  const el = document.getElementById('dataStats');
+  if(!el) return;
+  const keys = Store.listKeys();
+  let bytes = 0;
+  keys.forEach(k => { const v = Store.get(k); if(v) bytes += v.length; });
+  el.innerHTML = statHtml(items.length, 'Records') +
+                 statHtml(keys.length, 'Keys') +
+                 statHtml(bytes < 1024 ? bytes + ' B' : (bytes / 1024).toFixed(1) + ' KB', 'Stored');
+}
+
+function exportData(){
+  const payload = {
+    app: APP_CONFIG.id,
+    version: APP_VERSION,
+    schema: DATA_SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
+    data: {}
+  };
+  Store.listKeys().forEach(k => {
+    if(k.indexOf(KEYS.backupPrefix) === 0) return;
+    payload.data[k] = Store.get(k);
+  });
+  try{
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = APP_CONFIG.id + '-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Backup exported', 'success');
+  }catch(e){
+    toast('Could not create the backup file.', 'error');
+  }
+}
+
+function importData(input){
+  const file = input.files && input.files[0];
+  input.value = '';
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let payload;
+    try{ payload = JSON.parse(reader.result); }
+    catch(e){ toast('That file is not a valid backup.', 'error'); return; }
+
+    if(!payload || typeof payload !== 'object' || !payload.data){
+      toast('That file is not a valid backup.', 'error'); return;
+    }
+    if(payload.app && payload.app !== APP_CONFIG.id){
+      toast('That backup belongs to a different app.', 'error'); return;
+    }
+
+    /* Merge whatever collections the backup itself declares, rather than a
+       hard-coded list of keys. That is what lets a product replace the demo
+       without rewriting import — and without import silently succeeding
+       while restoring nothing, which is the failure this shape prevents.
+
+       An array of records carrying an `id` merges by id, newest `updatedAt`
+       winning. Anything else is written only when this device has no value
+       for it, so an old backup can never overwrite newer state. */
+    const result = mergeBackup(payload.data);
+    if(result.collections === 0){
+      toast('That backup contains no records this app recognises.', 'warning');
+      return;
+    }
+    Domain.hydrate();
+    renderAll();
+    renderDataStats();
+    toast(result.added + ' added, ' + result.updated + ' updated', 'success');
+  };
+  reader.onerror = () => toast('Could not read that file.', 'error');
+  reader.readAsText(file);
+}
+
+/* Domain-agnostic merge. Knows about records — a thing with an `id` and
+   optionally an `updatedAt` — and nothing about what those records mean. */
+function isRecord(r){ return r && typeof r === 'object' && typeof r.id === 'string'; }
+
+function mergeBackup(data){
+  let added = 0, updated = 0, collections = 0;
+  Object.keys(data).forEach(key => {
+    /* Never restore a backup's own backups, and never let a file downgrade
+       the schema version this device is already on. */
+    if(key.indexOf(KEYS.backupPrefix) === 0 || key === KEYS.schemaVersion) return;
+    const raw = data[key];
+    if(typeof raw !== 'string') return;
+
+    let incoming;
+    try{ incoming = JSON.parse(raw); }catch(e){ return; }
+
+    if(Array.isArray(incoming) && incoming.every(isRecord)){
+      collections++;
+      const existing = Store.getJSON(key, []);
+      const byId = new Map(Array.isArray(existing) ? existing.filter(isRecord).map(r => [r.id, r]) : []);
+      incoming.forEach(inc => {
+        const cur = byId.get(inc.id);
+        if(!cur){ byId.set(inc.id, inc); added++; }
+        else if((inc.updatedAt || '') > (cur.updatedAt || '')){
+          byId.set(inc.id, Object.assign({}, cur, inc)); updated++;
+        }
+      });
+      Store.setJSON(key, [...byId.values()]);
+    } else if(Store.get(key) === null){
+      collections++;
+      Store.set(key, raw);
+      added++;
+    }
+  });
+  return { added, updated, collections };
+}
+
+async function resetAllData(){
+  const ok = await confirmAction({
+    title: 'Reset all data?',
+    message: 'Every record this app has stored on this device will be erased. ' +
+             'Export a backup first if you want to keep it.',
+    confirmLabel: 'Erase everything',
+    destructive: true
+  });
+  if(!ok) return;
+  Store.listKeys().forEach(k => Store.remove(k));
+  items = [];
+  Store.set(KEYS.schemaVersion, String(DATA_SCHEMA_VERSION));
+  renderAll();
+  renderDataStats();
+  toast('All data erased', 'success');
+}
+
+/* =========================================================
+   WHAT'S NEW
+   ========================================================= */
+function openUpdates(){
+  renderUpdates();
+  Store.set(KEYS.lastSeenUpdate, APP_UPDATES[0].id);
+  renderUpdatesDot();
+  pushOverlayHistory();
+  openOverlay('updatesOverlay');
+}
+function closeUpdates(){ closeOverlay('updatesOverlay'); releaseOverlayHistory(); }
+
+function renderUpdatesDot(){
+  const btn = document.getElementById('updatesBtn');
+  if(!btn) return;
+  const seen = Store.get(KEYS.lastSeenUpdate);
+  const unread = seen !== APP_UPDATES[0].id;
+  btn.innerHTML = sparkIcon(18);
+  btn.style.color = unread ? 'var(--accent)' : '';
+  btn.setAttribute('aria-label', unread ? "What's new — unread" : "What's new");
+}
+
+function renderUpdates(){
+  const host = document.getElementById('updatesBody');
+  if(!host) return;
+  host.innerHTML = APP_UPDATES.map((u, i) => {
+    const groups = [
+      ['New', u.newFeatures], ['Improved', u.improvements], ['Fixed', u.fixes]
+    ].filter(g => g[1] && g[1].length);
+    return '<section class="panel" style="margin-bottom:var(--space-lg)">' +
+      '<div class="detail-row" style="padding-top:0">' +
+        '<span class="detail-label">' + escapeHtml(u.version) +
+          (i === 0 ? ' · Current' : '') + '</span>' +
+        '<span class="detail-value">' + formatDate(u.date) + '</span>' +
+      '</div>' +
+      '<h2 style="margin-top:var(--space-sm)">' + escapeHtml(u.title) + '</h2>' +
+      '<p class="sheet-sub">' + escapeHtml(u.summary) + '</p>' +
+      groups.map(g =>
+        '<div class="section-label">' + g[0] + '</div><ul style="margin:0;padding-left:1.1em;' +
+        'color:var(--text-dim);font-size:var(--fs-support)">' +
+        g[1].map(l => '<li style="margin-bottom:var(--space-xs)">' + escapeHtml(l) + '</li>').join('') +
+        '</ul>').join('') +
+    '</section>';
+  }).join('');
+}
+
+/* =========================================================
+   COMPONENTS — every primitive, rendered by the app's own code
+   ========================================================= */
+function openComponents(){
+  renderComponents();
+  pushOverlayHistory();
+  openOverlay('componentsOverlay');
+}
+function closeComponents(){ closeOverlay('componentsOverlay'); releaseOverlayHistory(); }
+
+function renderComponents(){
+  const host = document.getElementById('componentsBody');
+  if(!host) return;
+  host.innerHTML =
+    '<p class="page-intro">Every primitive this app ships. If one is not used here or ' +
+      'by the demo, it should not exist.</p>' +
+
+    '<div class="section-label">Buttons</div>' +
+    '<div style="display:flex;gap:var(--space-sm);flex-wrap:wrap">' +
+      '<button class="btn-primary">Primary</button>' +
+      '<button class="btn-secondary">Secondary</button>' +
+      '<button class="btn-secondary btn-danger">Destructive</button>' +
+      '<button class="icon-btn" aria-label="Edit">' + pencilIcon(17) + '</button>' +
+    '</div>' +
+
+    '<div class="section-label">Feedback</div>' +
+    '<div style="display:flex;gap:var(--space-sm);flex-wrap:wrap">' +
+      TOAST_VARIANTS.map(v =>
+        '<button class="btn-secondary" onclick="toast(\'A ' + v + ' message\',\'' + v + '\')">' +
+        v.charAt(0).toUpperCase() + v.slice(1) + '</button>').join('') +
+    '</div>' +
+    '<button class="btn-secondary btn-block" style="margin-top:var(--space-sm)" ' +
+      'onclick="demoConfirm()">Open a confirmation</button>' +
+
+    '<div class="section-label">Status</div>' +
+    '<div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">' +
+      '<span class="badge">Neutral</span>' +
+      '<span class="badge badge-active">Active</span>' +
+      '<span class="badge badge-done">Done</span>' +
+    '</div>' +
+
+    '<div class="section-label">Progress</div>' +
+    '<div class="progress-bar" style="margin-bottom:var(--space-lg)"><span style="width:62%"></span></div>' +
+    '<div style="display:flex;align-items:center;gap:var(--space-lg)">' +
+      progressRing(62, 56) +
+      '<span class="detail-value">62% complete</span>' +
+    '</div>' +
+
+    '<div class="section-label">Notices</div>' +
+    '<div class="notice"><span aria-hidden="true">' + infoIcon(17) + '</span>' +
+      '<span><strong>Neutral</strong>Something worth knowing.</span></div>' +
+    '<div class="notice notice-warning"><span aria-hidden="true">' + warnIcon(17) + '</span>' +
+      '<span><strong>Warning</strong>Something needs attention.</span></div>' +
+    '<div class="notice notice-error"><span aria-hidden="true">' + warnIcon(17) + '</span>' +
+      '<span><strong>Error</strong>Something failed, and here is what to do.</span></div>' +
+
+    '<div class="section-label">Loading</div>' +
+    '<div class="loading"><span class="spinner" aria-hidden="true"></span>Loading</div>' +
+
+    '<div class="section-label">Stats</div>' +
+    '<div class="stat-grid">' + statHtml(12, 'Records') + statHtml('4.2 KB', 'Stored') + '</div>' +
+
+    '<div class="section-label">Empty state</div>' +
+    '<div class="panel">' + emptyStateHtml({
+      mark: inboxIcon(30), title: 'Nothing here yet',
+      body: 'What this area is, why it is empty, and one obvious action.'
+    }) + '</div>';
+}
+
+async function demoConfirm(){
+  const ok = await confirmAction({
+    title: 'Confirm this action?',
+    message: 'Confirmations are for consequential decisions. Everything else gets a toast.',
+    confirmLabel: 'Do it'
+  });
+  toast(ok ? 'Confirmed' : 'Cancelled', ok ? 'success' : 'neutral');
+}
+
+function progressRing(percent, size){
+  const px = size || 56, r = (px / 2) - 4, c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.max(0, Math.min(100, percent)) / 100);
+  return '<svg class="progress-ring" width="' + px + '" height="' + px + '" ' +
+    'viewBox="0 0 ' + px + ' ' + px + '" role="img" aria-label="' + percent + ' percent">' +
+    '<circle class="progress-ring-track" cx="' + px/2 + '" cy="' + px/2 + '" r="' + r + '"/>' +
+    '<circle class="progress-ring-fill" cx="' + px/2 + '" cy="' + px/2 + '" r="' + r + '" ' +
+      'style="stroke-dasharray:' + c.toFixed(2) + ';stroke-dashoffset:' + offset.toFixed(2) + '"/>' +
+  '</svg>';
+}
+
+/* =========================================================
+   IDENTITY PANEL — proves config is derived, not typed
+   ========================================================= */
+function renderIdentity(){
+  const el = document.getElementById('identityPanel');
+  if(!el) return;
+  const rows = [
+    ['App id', APP_CONFIG.id],
+    ['Version', APP_VERSION],
+    ['Storage', Store.prefix() + '…'],
+    ['Cache', CACHE_NAMESPACE],
+    ['Storage backend', Store.backend()]
+  ];
+  el.innerHTML = rows.map(r =>
+    '<div class="detail-row"><span class="detail-label">' + escapeHtml(r[0]) + '</span>' +
+    '<span class="detail-value" style="font-family:var(--font-mono)">' + escapeHtml(r[1]) + '</span></div>'
+  ).join('');
+}
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : str;
+  return div.innerHTML;
+}
+function escapeAttr(str){ return escapeHtml(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+function formatDate(iso){
+  if(!iso) return '—';
+  try{
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }catch(e){ return '—'; }
+}
+
+/* Honest surfacing: if storage cannot persist, say so plainly rather than
+   letting someone discover it by losing data. */
+function renderStorageNotice(migrationResult){
+  const el = document.getElementById('storageNotice');
+  if(!el) return;
+  let msg = null, tone = 'notice-warning';
+  if(!Store.isPersistent()){
+    msg = "This browser is not letting the app store data, so anything you create will be " +
+          "lost when you close it. Try opening it directly rather than in a private window " +
+          "or an embedded viewer.";
+    tone = 'notice-error';
+  } else if(migrationWarning){
+    msg = migrationWarning;
+  } else if(migrationResult && migrationResult.migrated){
+    msg = 'Your saved data was updated to the latest format. Everything was carried over.';
+    tone = 'notice';
+  }
+  el.innerHTML = msg
+    ? '<div class="notice ' + tone + '"><span aria-hidden="true">' + warnIcon(17) + '</span>' +
+      '<span>' + escapeHtml(msg) + '</span></div>'
+    : '';
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+function paintStaticIcons(){
+  /* Which tabs exist is declared once, in the markup. Reading it back here
+     means adding or renaming a tab is a markup edit — not a markup edit plus
+     an id map somewhere else that nobody remembers to update. */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const glyph = btn.querySelector('.glyph');
+    if(glyph && btn.dataset.tab) glyph.innerHTML = tabIcon(btn.dataset.tab);
+  });
+  const back = chevronLeft(20);
+  document.querySelectorAll('.page-topbar .icon-btn:empty').forEach(b => { b.innerHTML = back; });
+  document.querySelectorAll('.list-row-arrow:empty').forEach(a => { a.innerHTML = chevronRight(15); });
+  const t = document.getElementById('appTitle');
+  if(t) t.textContent = APP_CONFIG.name;
+}
+
+function boot(){
+  const idError = validateAppId(APP_CONFIG.id);
+  if(idError) throw new Error(idError);
+
+  const migrationResult = runMigrations();
+  Domain.hydrate();
+
+  paintStaticIcons();
+  renderAll();
+  renderStorageNotice(migrationResult);
+
+  document.getElementById('app').style.display = '';
+
+  /* One observer owns the lock, the focus and the stack for every overlay,
+     including any restored during boot. */
+  initOverlayEngine();
+
+  Domain.wire();
+}
+
+try{ boot(); }
+catch(err){
+  /* A failed boot must still leave something usable on screen rather than a
+     blank page with no way to report what happened. */
+  console.error('Boot failed:', err);
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div class="notice notice-error" style="margin:var(--space-xl)">' +
+    '<span><strong>This app could not start</strong>' + escapeHtml(String(err && err.message || err)) +
+    '</span></div>');
+}
+
+/* Offline support registers only over http(s) — a no-op when the file is
+   opened directly from disk. */
+if('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

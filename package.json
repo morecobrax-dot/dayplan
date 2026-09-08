@@ -1,0 +1,16 @@
+{
+  "name": "app-starter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An opinionated, offline-capable mobile app foundation.",
+  "scripts": {
+    "verify": "node test/run.js verify",
+    "test": "node test/run.js contracts",
+    "config:sync": "node scripts/config.js sync",
+    "config:verify": "node scripts/config.js verify",
+    "contamination": "node scripts/contamination.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
