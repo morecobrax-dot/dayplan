@@ -16,7 +16,7 @@
  */
 
 /* APP-CACHE-BEGIN */
-const CACHE_NAME = 'app-starter-v0.1.0';
+const CACHE_NAME = 'dayplan-v0.1.0';
 /* APP-CACHE-END */
 
 const ASSETS = [
@@ -72,5 +72,62 @@ self.addEventListener('fetch', event => {
         return res;
       })
       .catch(() => caches.match(req).then(hit => hit || caches.match('./index.html')))
+  );
+});
+
+/* =========================================================
+   NOTIFICATIONS
+   ---------------------------------------------------------
+   The client half of real push, built and inert.
+
+   These handlers are complete and correct. What does not exist is
+   the service that would SEND a push: that needs a VAPID key pair
+   whose private half lives on a server, and there is no server.
+   Until there is, nothing ever dispatches a 'push' event here and
+   the app says so in those words — see reminderCapabilityLine().
+
+   Notifications shown while the app is open go through
+   registration.showNotification() from the page, and land in the
+   click handler below like any other.
+   ========================================================= */
+
+self.addEventListener('push', event => {
+  /* A push with no readable payload still deserves to be shown: swallowing it
+     would mean a reminder the server believes it delivered and the person
+     never saw. The generic wording is the honest fallback. */
+  let payload = {};
+  try{ payload = event.data ? event.data.json() : {}; }
+  catch(e){ payload = {}; }
+
+  const title = payload.title || 'Dayplan';
+  const options = {
+    body: payload.body || 'Something on your plan is starting soon.',
+    tag: payload.tag || 'dayplan-reminder',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    /* Carried through to the click handler so the tap opens the right day. */
+    data: { date: payload.date || null, itemId: payload.itemId || null }
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const data = event.notification.data || {};
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      /* Focus a window this app already owns rather than opening a second
+         copy: two instances of a local-first app both writing the same
+         storage is how a person loses an edit. */
+      for(const client of list){
+        if(client.url.indexOf(self.registration.scope) === 0 && 'focus' in client){
+          client.postMessage({ type: 'open-item', date: data.date, itemId: data.itemId });
+          return client.focus();
+        }
+      }
+      if(self.clients.openWindow) return self.clients.openWindow('./index.html');
+      return undefined;
+    })
   );
 });

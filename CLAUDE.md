@@ -3,9 +3,9 @@
 Instructions for AI coding sessions in this repository. These override default
 behaviour.
 
-Read [STARTER-ARCHITECTURE.md](STARTER-ARCHITECTURE.md) before changing
-architecture, and [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) before changing
-anything a user sees.
+Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing architecture, and
+[PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) before changing anything a user sees.
+The product rules at the bottom of this file are not optional.
 
 ---
 
@@ -14,11 +14,11 @@ anything a user sees.
 If you are starting a product from this foundation, in this order:
 
 1. Read [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) — the rules the UI must obey.
-2. Read [STARTER-ARCHITECTURE.md](STARTER-ARCHITECTURE.md) — what already
+2. Read [ARCHITECTURE.md](ARCHITECTURE.md) — what already
    exists, so you do not rebuild it.
 3. Read the product's own requirements. If there aren't any written down, ask
    for them before writing code.
-4. Follow [NEW-PROJECT.md](NEW-PROJECT.md) step by step.
+4. Follow the foundation notes step by step.
 5. **Separate foundation from domain before you type.** Name which parts of the
    change are product-specific and which are genuinely reusable.
 
@@ -146,3 +146,78 @@ AUDIT → UNDERSTAND → IMPLEMENT → ADVERSARIAL VERIFY → DIFF AUDIT → SHI
 28. **Stop at the requested phase.** Finish it completely, report, and wait.
     Do not start the next phase, do not "while I'm here", do not polish the
     demo into a product.
+
+---
+
+# Dayplan's own rules
+
+These are on top of everything above. Each one is here because breaking it
+produced a real defect in this repository, and the contract that now prevents
+it is named in brackets.
+
+## Time
+
+29. **Never `new Date('<a civil date>')`.** A date-only string is parsed as
+    UTC, so west of Greenwich it is the previous day — for every date, all
+    year, for half of the people using it. Split it by hand. *[20]*
+30. **Never add a day as `+86400000`.** A DST day is 23 or 25 hours long. Day
+    arithmetic goes through the `Date` constructor, which normalises the
+    calendar. *[20]*
+31. **Never derive a duration by subtracting two instants.** 09:00 to 10:00 is
+    sixty minutes on every day of the year. Durations are wall-clock minutes;
+    instants are an output, never an input. *[20]*
+32. **A civil date is `'YYYY-MM-DD'` and a time is minutes after local
+    midnight.** They are not interchangeable and neither is a `Date`.
+
+## The schedule
+
+33. **An occurrence is computed, never stored.** Editing one day of a routine
+    writes an `Override` keyed by series id *and* date. If you find yourself
+    writing to the series from an occurrence edit, stop. *[22]*
+34. **One predicate owns "can this move?"** — `isMovableOccurrence()`. This was
+    two once, they disagreed, and Auto Plan scheduled straight over completed
+    work. Do not add a second. *[25]*
+35. **Auto Plan proposes.** Computing a proposal writes nothing. Applying is a
+    separate act the person takes. A commitment never moves, a duration is
+    never shortened to fit, and work that will not fit is reported with a
+    reason rather than dropped. *[25]*
+36. **Completion and time are different truths.** Completing something records
+    when it happened and never touches when it was planned. The clock line
+    follows the clock and nothing else. *[23]*
+37. **Demand is the whole duration; only anchors are clamped to the window.**
+    Clamping demand made the app call a day comfortable while Auto Plan could
+    not fit the work. *[25]*
+
+## Honesty
+
+38. **Never claim a reminder the product cannot deliver.** A `setTimeout` chain
+    is not a reminder system. Background delivery stays described as "not set
+    up yet" until a notification has actually arrived on a locked phone. See
+    [PUSH-SETUP.md](PUSH-SETUP.md). *[26]*
+39. **Never label a deterministic rule engine "AI".** Auto Plan is a first-fit
+    packer and is named accordingly. A real provider goes behind a server
+    endpoint, and no key ever reaches the client. *[26]*
+40. **An `.ics` export is an export.** Never call it a sync; nothing reads a
+    change back. *[27]*
+
+## Appearance
+
+41. **Both palettes or neither.** Every colour token added to layer 1, 2 or 4
+    is defined in the light block too. *[29]*
+42. **A colour used as text is measured, not eyeballed.** The contract computes
+    the ratio from the tokens; 4.5:1 for text, 3:1 for a rail or an icon. The
+    clock label shipped at 4.17:1 until it was measured. *[29]*
+43. **Appearance is resolved once**, into a literal `data-theme`. Never add a
+    `prefers-color-scheme` block — that is a second owner for one decision. *[29]*
+
+## Interaction
+
+44. **A scroll is never a reschedule.** A gesture is a scroll until it proves
+    otherwise: a deliberate hold on touch, a movement threshold on a mouse.
+    Movement before the hold disarms the drag permanently for that gesture. *[24]*
+45. **Suppress page scrolling only while a drag is live**, through the
+    non-passive `touchmove` listener. Never put `touch-action: none` on the
+    timeline. *[24]*
+46. **Nothing floats over a control.** The add button covered the tick box
+    once; the tick box moved to the leading edge. A visible control that
+    cannot be tapped is worse than a disabled one.

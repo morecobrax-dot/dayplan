@@ -329,14 +329,30 @@ function buildDom(src){
    against one shared localStorage.
    ========================================================= */
 const BRIDGE = [
+  /* foundation */
   'APP_CONFIG', 'APP_UPDATES', 'APP_VERSION', 'APP_ID_PATTERN',
   'STORAGE_NAMESPACE', 'CACHE_NAMESPACE', 'KEYS',
   'Store', 'DATA_SCHEMA_VERSION', 'MIGRATIONS', 'migrationWarning', 'Domain',
-  'items', 'itemFilter', 'editingItemId', 'detailItemId', 'formStatus',
-  'ITEM_STATUSES', 'STATUS_LABEL', 'currentTab',
+  'currentTab',
   'TOAST_MS', 'MAX_TOASTS', 'TOAST_VARIANTS',
   'OVERLAY_Z_BASE', '_openSheetStack', '_sheetOpeners', '_lockDepth', '_lockedScrollY',
-  '_historyDepth', '_pendingSelfPops', '_confirmResolve'
+  '_historyDepth', '_pendingSelfPops', '_confirmResolve',
+  /* product state */
+  'items', 'overrides', 'tags', 'prefs', 'currentTheme',
+  'todayDate', 'planDate', 'planMode', 'inboxFilter',
+  'editingItemId', 'detailItemId', 'detailDate', 'editingTagId', 'schedulingItemId',
+  'formStatus', 'formKind', 'formTagId', 'formRepeat', 'formReminders', 'formPriority',
+  'quickTagId', 'quickAddDate', 'onboardStep',
+  '_timelineWindows', '_dragState', '_dragArm', '_firedReminders', '_proposal',
+  '_repeatDraft', '_nowTimer', '_edgeTimer', '_hour12Cache',
+  /* product constants */
+  'ITEM_KINDS', 'ITEM_STATUSES', 'STATUS_LABEL', 'PRIORITIES', 'PRIORITY_LABEL',
+  'MIN_PER_DAY', 'MAX_DURATION', 'SNAP_MINUTES', 'DEFAULT_DURATION',
+  'PX_PER_MIN', 'HOUR_PX', 'DEFAULT_PREFS',
+  'TAG_COLORS', 'BUILT_IN_TAGS', 'TAG_ICON_KEYS', 'TAG_ICON_PATHS',
+  'RECUR_FREQS', 'WEEKDAY_NAMES', 'REMINDER_OFFSETS', 'PUSH_CONFIG',
+  'THEMES', 'THEME_LABEL',
+  'LONG_PRESS_MS', 'CANCEL_PX', 'MOUSE_THRESHOLD_PX', 'EDGE_SCROLL_PX'
 ];
 
 function loadApp(opts){

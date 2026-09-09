@@ -1,61 +1,44 @@
-# app-starter
+# Dayplan
 
-An opinionated foundation for local-first, installable mobile web applications.
+A visual daily planner. It answers one question before any other:
 
-It exists so that building a new product means answering *"what should this
-product do?"* rather than solving mobile navigation, overlays, safe areas,
-forms, storage namespacing and PWA installation again from scratch.
+> **What am I doing now, and what comes next?**
+
+One HTML file, one service worker, one manifest, two icons. No framework, no
+build step, no dependencies, no account, no server. Everything you create lives
+on your own device.
 
 ---
 
-## What it is
+## What it does
 
-One HTML file, one service worker, one manifest, two icons. No framework, no
-build step, no dependencies. `npm` is used only for the test and config
-tooling — the app itself runs by opening `index.html`.
+- **Today** — a vertical day timeline with a clock line that follows the real
+  time. What is happening now, what follows it, and what is already done.
+- **Plan** — the same day, editable. Press and hold a block to move it, drag its
+  bottom edge to change how long it takes, and see the week's load beside it.
+- **Inbox** — anything captured before you know when it happens. It waits there
+  until you give it a time.
+- **Auto Plan** — proposes a workable day around your fixed commitments and
+  applies nothing until you say so.
 
-```
-index.html              the entire application: tokens, shell, engine, demo
-sw.js                   offline shell, cache identity derived from APP_CONFIG
-manifest.webmanifest    install metadata, derived from APP_CONFIG
-icon-192/512.png        placeholder icons — replace them
-scripts/config.js       sync / verify static files against APP_CONFIG
-scripts/contamination.js permanent domain-residue guard
-test/harness.js         loads the app into a Node vm with a DOM stub
-test/contracts.js       the contract suite
-test/run.js             the runner
-```
+### The distinction the whole product rests on
 
-## What it includes
+|  | Moves? | Auto Plan may place it |
+|---|---|---|
+| **Commitment** | A real appointment at a set time | Never |
+| **Task** | Needs time, but can go anywhere it fits | Yes |
 
-- **App shell** — header, bottom navigation, full-page detail flows, safe-area
-  handling on all four edges, landscape and text-scaling behaviour that has
-  been through real devices.
-- **One overlay engine** — a single `MutationObserver` owning background scroll
-  lock, focus trapping and restoration, open-order stacking and ARIA state, for
-  every sheet and page. Adding a surface cannot forget any of it.
-- **Namespaced storage** — one adapter, every key prefixed with `APP_ID`,
-  honest reporting when a write cannot land, versioned migrations, and the rule
-  that absent data stays absent.
-- **Toast and confirmation** — non-blocking feedback and one confirmation
-  sheet. No `alert()`, `confirm()` or `prompt()` anywhere, enforced by a test.
-- **A design system that is enforced** — four token layers, with contracts that
-  fail the build on a raw `font-family` or an off-scale `font-size`.
-- **PWA** — installable, offline-capable, fully relative paths, and a cache
-  identity that cannot collide with another app on the same origin.
-- **A demo domain** — a small `Item` collection proving list, detail, create,
-  edit, delete, validate, persist, confirm and empty state.
-- **Contracts** — a few hundred assertions defending the foundation, not
-  thousands defending a domain.
+Either can repeat. Either can sit in the inbox with no time at all. Those two
+kinds and those two flags are the entire model.
 
-## What it deliberately does not include
+## What it will not do
 
-No authentication, no backend, no database, no account system, no API layer, no
-router, no state-management library, no component framework, no CSS framework,
-no icon package, no charting, no date library, no analytics.
-
-Those belong to a product, not to a foundation. Add them when a product
-actually needs them.
+- It will not move anything without asking.
+- It will not tell you a day fits when it does not.
+- It will not show a number the data cannot support.
+- It will not claim a reminder it cannot deliver. See
+  [PUSH-SETUP.md](PUSH-SETUP.md) for exactly what works today and what needs a
+  server.
 
 ## Run it
 
@@ -64,7 +47,7 @@ npx --yes http-server -p 8181 -c-1 .
 ```
 
 Then open `http://localhost:8181`. A service worker needs `http(s)`, so opening
-the file directly works but will not exercise offline behaviour.
+`index.html` from disk works but will not exercise offline behaviour.
 
 ## Verify it
 
@@ -72,9 +55,9 @@ the file directly works but will not exercise offline behaviour.
 npm run verify
 ```
 
-That is the one command to remember. It runs the contract suite, checks that
-the static PWA files still match `APP_CONFIG`, and scans for domain residue.
-Run it before every commit and every deploy.
+The one command to remember. It runs the contract suite, checks the static PWA
+files still match `APP_CONFIG`, and scans for domain residue. Green before every
+commit and every deploy.
 
 ```bash
 npm test              # contracts only
@@ -83,16 +66,42 @@ npm run contamination # residue scan only
 npm run config:sync   # write derived values into the static files
 ```
 
-## Start a new product
+### What the contracts defend
 
-Read [NEW-PROJECT.md](NEW-PROJECT.md). The short version: set `APP_ID`, run
-`npm run config:sync`, replace the demo domain.
+Contracts 1–19 are the foundation: identity, storage namespacing, migrations,
+the overlay engine, navigation, accessibility, the design system, the PWA.
 
-## The rest of the documentation
+Contracts 20–29 are this product:
 
-- [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) — the UX and visual rules this
-  foundation encodes, and the anti-patterns it refuses.
-- [STARTER-ARCHITECTURE.md](STARTER-ARCHITECTURE.md) — how the pieces fit and
-  where new domain code goes.
-- [NEW-PROJECT.md](NEW-PROJECT.md) — turning this into a real product.
+| | |
+|---|---|
+| **20 · Time** | Runs the whole time layer under eight real timezones in child processes — half-hour DST, UTC+14, southern transitions. Every assertion in it passes in UTC; they are the ones that break for some users and not others. |
+| **21 · Model** | A record is valid before it reaches a screen, and nothing derived is ever stored. |
+| **22 · Recurrence** | Editing one day cannot rewrite the series. |
+| **23 · Timeline** | The drawing cannot disagree with the data — geometry, overlap, cross-midnight, the clock line. |
+| **24 · Drag** | A scroll is never a reschedule. |
+| **25 · Auto Plan** | It proposes; only a person applies. A commitment never moves. |
+| **26 · Reminders** | The product never claims more than it delivers. |
+| **27 · Export** | A real calendar file, and it is never called a sync. |
+| **28 · Tags** | A tag can change without invalidating the past. |
+| **29 · Appearance** | Light and dark are one decision, and every colour used as text is *measured* against its ground. |
+
+## Releasing
+
+Add an entry to `APP_UPDATES` in `index.html`, run `npm run config:sync`, run
+`npm run verify`, then deploy. The newest entry **is** the version, and the
+service-worker cache name derives from it — skipping this ships an app that
+cannot invalidate its own cache.
+
+## Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — how the pieces fit and where things go.
+- [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) — the UX rules this codebase encodes.
+- [PUSH-SETUP.md](PUSH-SETUP.md) — the notification decision, and the one thing
+  that still needs an account.
 - [CLAUDE.md](CLAUDE.md) — development method for AI coding sessions.
+
+---
+
+Built from a private local-first app foundation. The product owns its code:
+there is no submodule, no package and nothing that pulls changes back in.

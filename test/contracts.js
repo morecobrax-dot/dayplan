@@ -282,18 +282,18 @@ function testNavigation(){
   const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab).filter(Boolean);
   T('the tab bar declares tabs', tabs.length >= 2, String(tabs.length));
   tabs.forEach(t => T('tab "' + t + '" has a view', !!d.getElementById('view-' + t)));
-  T('the demo ships only as many tabs as it needs', tabs.length <= 4, String(tabs.length));
+  T('the product ships only as many tabs as it needs', tabs.length <= 4, String(tabs.length));
 
   sub('an unknown tab is a no-op, not a blank screen');
-  c.switchTab('items');
+  c.switchTab('inbox');
   const before = c.currentTab;
   c.switchTab('does-not-exist');
   T('currentTab is unchanged', c.currentTab === before);
-  T('the current view is still active', d.getElementById('view-items').classList.contains('active'));
+  T('the current view is still active', d.getElementById('view-inbox').classList.contains('active'));
 
   sub('a tab opens at its top, so the same tap gives the same result');
   app.ctx.window && (app.ctx.window.scrollY = 400);
-  c.switchTab('home');
+  c.switchTab('today');
   T('the page is scrolled to top on entry', c.window.scrollY === 0);
   T('and it is instant, not animated', /behavior: 'instant'/.test(js()));
 
@@ -517,7 +517,7 @@ function testConfirmation(){
 }
 
 /* =========================================================
-   CONTRACT 10 — FORMS AND THE DEMO DOMAIN
+   CONTRACT 10 — FORMS AND THE SCHEDULE DOMAIN
    ========================================================= */
 function testForms(){
   section('CONTRACT 10 — create, edit, validate, persist, delete');
@@ -537,15 +537,36 @@ function testForms(){
     d.getElementById('itemTitleError').textContent.length > 10);
   T('the form stays open', d.getElementById('itemFormOverlay').classList.contains('open'));
 
+  sub('a start time with no day is refused, not guessed');
+  /* Defaulting to today here would put a commitment on a day the person never
+     named, which is the class of bug that makes someone miss something. */
+  d.getElementById('itemTitle').value = 'Untethered';
+  d.getElementById('itemTime').value = '09:00';
+  d.getElementById('itemDate').value = '';
+  c.saveItemForm();
+  T('nothing was created', c.items.length === 0);
+  T('and the message names the fix',
+    /day/i.test(d.getElementById('itemTitleError').textContent));
+
+  sub('an unreadable time is refused rather than rounded');
+  d.getElementById('itemDate').value = '2026-09-08';
+  d.getElementById('itemTime').value = 'half nine';
+  c.saveItemForm();
+  T('still nothing created', c.items.length === 0);
+
   sub('creating');
-  d.getElementById('itemTitle').value = 'First item';
-  d.getElementById('itemNote').value = 'A note';
-  c.setFormStatus('active');
+  d.getElementById('itemTime').value = '09:00';
+  d.getElementById('itemDuration').value = '45';
+  c.setFormKind('event');
   c.saveItemForm(); c.__flush();
   T('the record exists', c.items.length === 1);
-  T('with its title', c.items[0].title === 'First item');
-  T('with its note', c.items[0].note === 'A note');
-  T('with a status', c.items[0].status === 'active');
+  T('with its title', c.items[0].title === 'Untethered');
+  T('with its kind', c.items[0].kind === 'event');
+  T('with a civil date, not a parsed instant', c.items[0].date === '2026-09-08');
+  T('with wall-clock minutes', c.items[0].start === 540);
+  T('with its duration', c.items[0].duration === 45);
+  T('and no stored end time', c.items[0].end === undefined);
+  T('open by default', c.items[0].status === 'open');
   T('with an id', typeof c.items[0].id === 'string' && c.items[0].id.length > 4);
   T('with timestamps', !!c.items[0].createdAt && !!c.items[0].updatedAt);
   T('the form closed', !d.getElementById('itemFormOverlay').classList.contains('open'));
@@ -554,13 +575,14 @@ function testForms(){
   sub('editing changes the record, not its identity');
   const id = c.items[0].id, created = c.items[0].createdAt;
   c.openItemForm(id); c.__flush();
-  T('the form is pre-filled', d.getElementById('itemTitle').value === 'First item');
+  T('the form is pre-filled', d.getElementById('itemTitle').value === 'Untethered');
+  T('including its day', d.getElementById('itemDate').value === '2026-09-08');
   d.getElementById('itemTitle').value = 'Renamed';
-  c.setFormStatus('done');
+  c.setFormKind('task');
   c.saveItemForm(); c.__flush();
   T('still one record', c.items.length === 1);
   T('the title changed', c.items[0].title === 'Renamed');
-  T('the status changed', c.items[0].status === 'done');
+  T('the kind changed', c.items[0].kind === 'task');
   T('the id is unchanged', c.items[0].id === id);
   T('createdAt is unchanged', c.items[0].createdAt === created);
 
@@ -578,14 +600,16 @@ function testForms(){
   T('reopening the form restores it',
     restored.dom.document.getElementById('itemTitle').value === 'Half typed');
   T('editing an existing record never writes a draft',
-    /if\(editingItemId\) return;\s*\/\/ an edit in progress is not a draft/.test(js()) ||
-    /function scheduleDraftSave\(\)\{\s*if\(editingItemId\) return;/.test(js()));
+    /if\(editingItemId\) return;\s*\/\/ an edit in progress is not a draft/.test(js()));
 
   sub('saving clears the draft');
-  d.getElementById('itemTitle').value = 'Second item';
+  d.getElementById('itemTitle').value = 'Second thing';
+  d.getElementById('itemDate').value = '';
+  d.getElementById('itemTime').value = '';
   c.saveItemForm(); c.__flush();
   T('the draft is gone', c.Store.get(c.KEYS.itemDraft) === null);
   T('the record was created', c.items.length === 2);
+  T('with no day it waits in the inbox', c.items[1].date === null && c.items[1].start === null);
 
   sub('deleting asks first');
   const target = c.items[1].id;
@@ -848,7 +872,7 @@ function testStress(){
   const c = app.ctx, d = app.dom.document;
 
   sub('100 tab switches');
-  const tabs = ['home', 'items', 'settings'];
+  const tabs = ['today', 'plan', 'inbox', 'settings'];
   for(let i = 0; i < 100; i++) c.switchTab(tabs[i % tabs.length]);
   const active = [...d.querySelectorAll('.view')].filter(v => v.classList.contains('active'));
   T('still exactly one active view', active.length === 1, String(active.length));
@@ -953,9 +977,13 @@ function testContamination(){
 
   const src = H.readApp();
   T('no legacy brand token in the app', !/\bLOOP\b/.test(src));
-  T('the demo domain is neutral', /const ITEM_STATUSES/.test(js()));
-  T('the demo is small enough to delete easily',
-    (js().match(/DEMO DOMAIN[\s\S]*?SETTINGS — data ownership/) || [''])[0].split('\n').length < 400);
+  T('the product domain declares its own vocabulary', /const ITEM_STATUSES/.test(js()));
+  /* The starter asserted its demo stayed SMALL, so that deleting it would be
+     easy. A product's domain is the opposite: it is supposed to grow. What
+     still has to hold is that it is DELIMITED — that is what lets contract 19
+     prove the foundation above it never reaches into it. */
+  T('the product domain is delimited by its own banner',
+    /PRODUCT DOMAIN — Schedule[\s\S]*?SETTINGS — data ownership/.test(js()));
 }
 
 /* =========================================================
@@ -1047,7 +1075,7 @@ function testPortability(){
   sub('no foundation function names the demo entity');
   /* The boundary is the DEMO DOMAIN banner. Everything above it, plus the
      settings/updates/utilities/boot sections below it, is foundation. */
-  const demoStart = src.indexOf('DEMO DOMAIN — Item');
+  const demoStart = src.indexOf('PRODUCT DOMAIN — Schedule');
   const demoEnd = src.indexOf('SETTINGS — data ownership');
   T('the demo section is delimited', demoStart > 0 && demoEnd > demoStart);
   const foundation = src.slice(0, demoStart) + src.slice(demoEnd);
@@ -1131,10 +1159,912 @@ function testPortability(){
   })());
 }
 
+
+/* =========================================================
+   CONTRACT 20 — time is civil, local, and not 86,400,000 ms
+   ---------------------------------------------------------
+   Runs the whole time layer under real timezones in child
+   processes, because TZ cannot be changed once a process has made
+   its first Date. Every assertion in the probe passes in UTC; they
+   are the ones that break for some users and not others.
+   ========================================================= */
+function testTime(){
+  section('CONTRACT 20 — time is civil, local, and never elapsed milliseconds');
+  const { execFileSync } = require('child_process');
+  const probe = require('path').join(__dirname, 'tz-probe.js');
+
+  /* Chosen for what each one breaks: a half-hour DST shift, a UTC+14 date
+     line, southern-hemisphere transitions, and a zone with no DST at all. */
+  const zones = [
+    'UTC',
+    'America/New_York',
+    'America/Anchorage',
+    'Europe/London',
+    'Asia/Kolkata',
+    'Australia/Lord_Howe',
+    'Pacific/Kiritimati',
+    'Pacific/Chatham'
+  ];
+
+  sub('the same arithmetic in every zone');
+  zones.forEach(tz => {
+    let report = null;
+    try{
+      const raw = execFileSync(process.execPath, [probe], {
+        encoding: 'utf8',
+        env: Object.assign({}, process.env, { TZ: tz })
+      });
+      report = JSON.parse(raw);
+    }catch(e){
+      T(tz + ' — the probe ran', false, String(e && e.message || e).slice(0, 120));
+      return;
+    }
+    const bad = report.checks.filter(x => !x.ok);
+    T(tz + ' — ' + report.checks.length + ' time assertions hold', bad.length === 0,
+      bad.map(x => x.name + (x.detail ? ' (' + x.detail + ')' : '')).join(' | '));
+  });
+
+  sub('a date-only string is never handed to the Date parser');
+  const src = js();
+  /* `new Date('2026-09-08')` is parsed as UTC. The rule is enforced by
+     reading the source, because a single slip anywhere reintroduces the
+     off-by-one-day bug for every user west of Greenwich. */
+  const code = stripComments(src);
+  T('no bare string is passed to the Date constructor',
+    !/new Date\(\s*['"]\d{4}-\d{2}-\d{2}['"]\s*\)/.test(code),
+    (code.match(/new Date\(\s*['"][^'"]*['"]\s*\)/g) || []).slice(0, 3).join(' | '));
+  T('civil dates are split by hand instead',
+    /const m = \/\^\(\\d\{4\}\)-\(\\d\{2\}\)-\(\\d\{2\}\)\$\/\.exec\(civil\)/.test(src));
+  T('and rebuilt with the local constructor',
+    /new Date\(p\.y, p\.m - 1, p\.d\)/.test(src));
+
+  sub('day arithmetic never adds milliseconds');
+  T('no code adds a day as 86400000',
+    !/\+\s*86400000/.test(code));
+  T('addDays goes through the calendar',
+    /function addDays\([\s\S]{0,240}new Date\(p\.y, p\.m - 1, p\.d \+ n\)/.test(src));
+
+  sub('what a person types is understood or refused, never guessed');
+  const app = H.loadApp();
+  const c = app.ctx;
+  [['9', 540], ['9:30', 570], ['930', 570], ['09:05', 545], ['9pm', 1260],
+   ['12am', 0], ['12pm', 720], ['21:30', 1290], ['9.30', 570]].forEach(([text, want]) => {
+    T('"' + text + '" reads as ' + want, c.parseTimeInput(text) === want, String(c.parseTimeInput(text)));
+  });
+  ['', 'lunchtime', '25:00', '9:70', 'half nine', '13pm'].forEach(text => {
+    T('"' + text + '" is refused rather than guessed', c.parseTimeInput(text) === null,
+      String(c.parseTimeInput(text)));
+  });
+}
+
+/* =========================================================
+   CONTRACT 21 — the model repairs what it can and rejects the rest
+   ---------------------------------------------------------
+   Records arrive from storage written by an older version and from
+   backup files edited by hand. Neither is trusted.
+   ========================================================= */
+function testModel(){
+  section('CONTRACT 21 — a record is valid before it reaches a screen');
+  const app = H.loadApp();
+  const c = app.ctx;
+
+  sub('a record without the one thing that identifies it is not a record');
+  T('no title is rejected', c.normalizeItem({ kind: 'task' }) === null);
+  T('a blank title is rejected', c.normalizeItem({ title: '   ' }) === null);
+  T('a non-object is rejected', c.normalizeItem('nope') === null && c.normalizeItem(null) === null);
+
+  sub('everything else is repaired rather than thrown away');
+  const junk = c.normalizeItem({
+    title: 'Salvaged', kind: 'wat', status: 'purple', priority: 99,
+    duration: -5, start: 99999, date: '2026-02-30', deadline: 'soon',
+    reminders: [10, 10, -4, 'x', 9999, 30]
+  });
+  T('an unknown kind becomes a task', junk.kind === 'task');
+  T('an unknown status becomes open', junk.status === 'open');
+  T('an impossible priority becomes normal', junk.priority === 1);
+  T('a negative duration becomes the minimum', junk.duration === c.SNAP_MINUTES);
+  T('an impossible civil date becomes absent', junk.date === null);
+  T('an unparseable deadline becomes absent', junk.deadline === null);
+  T('a start with no date is dropped, not given today',
+    junk.start === null, String(junk.start));
+  T('duplicate reminders are collapsed', junk.reminders.length === 2);
+  T('and the survivors are the valid ones',
+    junk.reminders[0] === 10 && junk.reminders[1] === 30, junk.reminders.join(','));
+
+  sub('nothing derived is ever stored');
+  const item = c.normalizeItem({ title: 'X', date: '2026-09-08', start: 540, duration: 45 });
+  T('an end time is not a field', item.end === undefined);
+  T('it is computed on demand', c.itemEnd(item) === 585);
+  T('a colour is not copied onto the record', item.color === undefined);
+  T('the stored shape has no occurrence list', item.occurrences === undefined);
+  const src = js();
+  T('the collection written to storage is the records themselves',
+    /function persistItems\(\)\{ return Store\.setJSON\(KEYS\.items, items\); \}/.test(src));
+
+  sub('a duration cannot swallow a week');
+  const huge = c.normalizeItem({ title: 'X', duration: 99999 });
+  T('it is capped at a day', huge.duration === c.MAX_DURATION, String(huge.duration));
+
+  sub('the four product concepts are reachable from two kinds');
+  const inbox = c.normalizeItem({ title: 'I', kind: 'task' });
+  const fixed = c.normalizeItem({ title: 'F', kind: 'event', date: '2026-09-08', start: 600 });
+  const routine = c.normalizeItem({ title: 'R', kind: 'task', date: '2026-09-08', start: 600,
+    recurrence: { freq: 'daily', interval: 1 } });
+  T('an unscheduled task is one with no date', c.isInbox(inbox) && !c.isScheduled(inbox));
+  T('a fixed event is not flexible', !c.isFlexible(fixed) && c.isScheduled(fixed));
+  T('a flexible task is', c.isFlexible(routine));
+  T('a routine is any kind with a recurrence', routine.recurrence !== null);
+}
+
+/* =========================================================
+   CONTRACT 22 — editing one day never rewrites the series
+   ---------------------------------------------------------
+   The failure this prevents: someone moves Monday's routine by
+   fifteen minutes and silently moves every Monday, forever,
+   including the ones already in the past.
+   ========================================================= */
+function testRecurrence(){
+  section('CONTRACT 22 — a series, its occurrences, and its exceptions');
+  const shared = new Map();
+  const app = H.loadApp({ sharedStorage: shared });
+  const c = app.ctx;
+
+  const series = c.normalizeItem({
+    title: 'Stand-up', kind: 'task', date: '2026-09-07', start: 540, duration: 15,
+    recurrence: { freq: 'weekly', days: [1, 3, 5], interval: 1 }
+  });
+  c.items = [series];
+  c.persistItems();
+
+  sub('occurrences are computed, never stored');
+  T('it occurs on its weekdays', c.occurrencesForDate('2026-09-09').length === 1);
+  T('and not on the others', c.occurrencesForDate('2026-09-08').length === 0);
+  T('nothing was written to produce them',
+    c.Store.getJSON(c.KEYS.overrides, []).length === 0);
+  T('the stored collection still holds exactly one record',
+    c.Store.getJSON(c.KEYS.items, []).length === 1);
+
+  sub('moving one occurrence writes an exception, not a change to the series');
+  const before = JSON.stringify(c.items[0]);
+  T('the move is accepted', c.moveOccurrence(series.id, '2026-09-09', '2026-09-09', 600));
+  T('the series record is byte-for-byte unchanged', JSON.stringify(c.items[0]) === before);
+  T('that day moved', c.occurrencesForDate('2026-09-09')[0].start === 600);
+  T('the next one did not', c.occurrencesForDate('2026-09-11')[0].start === 540);
+  T('and neither did the previous one', c.occurrencesForDate('2026-09-07')[0].start === 540);
+  T('exactly one exception exists', c.overrides.length === 1);
+  T('keyed by series and date', c.overrides[0].id === series.id + '|2026-09-09');
+
+  sub('completing one occurrence does not complete the routine');
+  c.toggleOccurrenceDone(series.id, '2026-09-11');
+  T('that day is done', c.occurrencesForDate('2026-09-11')[0].status === 'done');
+  T('the following one is still open', c.occurrencesForDate('2026-09-14')[0].status === 'open');
+  T('the series record has no status of its own to corrupt', c.items[0].status === 'open');
+  T('and the moment it happened was recorded',
+    typeof c.occurrencesForDate('2026-09-11')[0].completedAt === 'string');
+
+  sub('skipping one day removes only that day');
+  c.skipOccurrence(series.id, '2026-09-14');
+  T('the skipped day is gone from the timeline', c.occurrencesForDate('2026-09-14').length === 0);
+  T('the day after it is not', c.occurrencesForDate('2026-09-16').length === 1);
+  T('and the pattern still says it should have occurred',
+    c.seriesOccursOn(c.items[0], '2026-09-14'));
+
+  sub('everything survives a reload');
+  const again = H.loadApp({ sharedStorage: shared });
+  T('the exception came back', again.ctx.overrides.length === 3);
+  T('the moved day is still moved', again.ctx.occurrencesForDate('2026-09-09')[0].start === 600);
+  T('the skipped day is still skipped', again.ctx.occurrencesForDate('2026-09-14').length === 0);
+  T('the completed day is still complete',
+    again.ctx.occurrencesForDate('2026-09-11')[0].status === 'done');
+
+  sub('a pattern that could never occur is not a pattern');
+  T('a weekly repeat with no weekday is refused',
+    c.normalizeRecurrence({ freq: 'weekly', days: [] }) === null);
+  T('an unknown frequency is refused',
+    c.normalizeRecurrence({ freq: 'fortnightly' }) === null);
+  T('an absurd interval falls back to every one',
+    c.normalizeRecurrence({ freq: 'daily', interval: 900 }).interval === 1);
+
+  sub('an interval counts weeks, not days');
+  const fortnight = c.normalizeItem({
+    title: 'F', kind: 'task', date: '2026-09-07', start: 540, duration: 30,
+    recurrence: { freq: 'weekly', days: [1], interval: 2 }
+  });
+  T('it occurs in week zero', c.seriesOccursOn(fortnight, '2026-09-07'));
+  T('not in week one', !c.seriesOccursOn(fortnight, '2026-09-14'));
+  T('again in week two', c.seriesOccursOn(fortnight, '2026-09-21'));
+  T('and never on a different weekday', !c.seriesOccursOn(fortnight, '2026-09-22'));
+
+  sub('a series stops when it is told to');
+  const bounded = c.normalizeItem({
+    title: 'B', kind: 'task', date: '2026-09-07', start: 540, duration: 30,
+    recurrence: { freq: 'daily', interval: 1, until: '2026-09-09' }
+  });
+  T('it occurs on the last allowed day', c.seriesOccursOn(bounded, '2026-09-09'));
+  T('and not the day after', !c.seriesOccursOn(bounded, '2026-09-10'));
+  T('and never before it began', !c.seriesOccursOn(bounded, '2026-09-06'));
+
+  sub('deleting a series takes its exceptions with it');
+  c.deleteItem(series.id);
+  T('the series is gone', c.items.length === 0);
+  T('no orphaned exception is left behind',
+    c.overrides.filter(o => o.seriesId === series.id).length === 0);
+}
+
+/* =========================================================
+   CONTRACT 23 — the timeline draws what is stored
+   ---------------------------------------------------------
+   Geometry is arithmetic on one scale constant. If the picture and
+   the record can disagree, every other guarantee is decoration.
+   ========================================================= */
+function testTimeline(){
+  section('CONTRACT 23 — the drawing cannot disagree with the data');
+  const app = H.loadApp();
+  const c = app.ctx;
+  c.prefs = c.normalizePrefs({ dayStart: 420, dayEnd: 1320 });
+
+  sub('a block is as tall as it is long');
+  const win = { from: 420, to: 1320 };
+  T('the scale is one constant', typeof c.PX_PER_MIN === 'number');
+  T('the shortest block clears the touch minimum',
+    c.SNAP_MINUTES * c.PX_PER_MIN >= 44, String(c.SNAP_MINUTES * c.PX_PER_MIN));
+  T('the window start is the origin', c.minuteToY(420, win) === 0);
+  T('an hour later is an hour of pixels', c.minuteToY(480, win) === 60 * c.PX_PER_MIN);
+  T('and the mapping inverts exactly', c.yToMinute(c.minuteToY(931, win), win) === 931);
+
+  sub('nothing is ever hidden by the planning window');
+  c.items = [c.normalizeItem({ title: 'Early', kind: 'event', date: '2026-09-08', start: 300, duration: 30 })];
+  const w = c.visibleWindow(c.occurrencesForDate('2026-09-08'));
+  T('the window grew to contain it', w.from <= 300, String(w.from));
+  T('and it did not shrink past the day end', w.to >= c.prefs.dayEnd, String(w.to));
+
+  sub('a block that runs past midnight appears on both days');
+  c.items = [c.normalizeItem({ title: 'Sleep', kind: 'task', date: '2026-09-08', start: 1380, duration: 480 })];
+  const first = c.occurrencesForDate('2026-09-08');
+  const second = c.occurrencesForDate('2026-09-09');
+  T('the first day shows it', first.length === 1);
+  T('clipped at midnight', first[0].visibleEnd === 1440, String(first[0].visibleEnd));
+  T('and says so', first[0].overflows === true);
+  T('the true end is not clipped', first[0].end === 1860, String(first[0].end));
+  T('the next day shows the remainder', second.length === 1 && second[0].continuation === true);
+  T('starting at midnight', second[0].visibleStart === 0);
+  T('and ending where the block really ends', second[0].visibleEnd === 420,
+    String(second[0].visibleEnd));
+  T('the tail is one view of one record, not a second record',
+    c.items.length === 1 && second[0].itemId === first[0].itemId);
+
+  sub('overlapping blocks sit side by side rather than on top of each other');
+  c.items = [
+    c.normalizeItem({ title: 'A', kind: 'event', date: '2026-09-08', start: 540, duration: 60 }),
+    c.normalizeItem({ title: 'B', kind: 'event', date: '2026-09-08', start: 570, duration: 60 }),
+    c.normalizeItem({ title: 'C', kind: 'event', date: '2026-09-08', start: 720, duration: 30 })
+  ];
+  const laid = c.layoutColumns(c.occurrencesForDate('2026-09-08'));
+  const a = laid.filter(x => x.title === 'A')[0];
+  const b = laid.filter(x => x.title === 'B')[0];
+  const cc = laid.filter(x => x.title === 'C')[0];
+  T('the two that overlap share a cluster', a._cols === 2 && b._cols === 2);
+  T('in different columns', a._col !== b._col);
+  T('the one that does not gets the full width', cc._cols === 1, String(cc._cols));
+
+  sub('two fixed commitments overlapping is named as a clash');
+  T('the clash is found', c.detectConflicts(c.occurrencesForDate('2026-09-08')).length === 1);
+  c.items[1] = c.normalizeItem(Object.assign({}, c.items[1], { kind: 'task' }));
+  T('a flexible task overlapping is not a clash — Auto Plan can solve it',
+    c.detectConflicts(c.occurrencesForDate('2026-09-08')).length === 0);
+
+  sub('the clock line follows the clock and nothing else');
+  const src = js();
+  T('it is positioned from the real time',
+    /function renderNowRail\([\s\S]{0,320}const m = nowMinute\(\);/.test(src));
+  T('completion never moves it',
+    !/renderNowRail[\s\S]{0,600}status === 'done'/.test(src));
+  T('and it is only drawn on today',
+    /function renderNowRail\([\s\S]{0,160}civil !== todayCivil\(\)\) return ''/.test(src));
+  T('the app notices the day rolling over while it is open',
+    /function refreshTodayDate\(\)\{[\s\S]{0,220}todayDate !== real/.test(src));
+}
+
+/* =========================================================
+   CONTRACT 24 — a scroll is never a reschedule
+   ---------------------------------------------------------
+   The defect this prevents: a person flicks the timeline to scroll
+   and moves an appointment instead. On a surface covered edge to
+   edge in draggable blocks, this is the default outcome unless the
+   gesture rules are explicit.
+   ========================================================= */
+function testDrag(){
+  section('CONTRACT 24 — dragging is intentional, and scrolling is not dragging');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const src = js();
+  const win = { from: 420, to: 1320 };
+
+  sub('where a drop lands is arithmetic, not a guess');
+  T('a drop snaps to the interval',
+    c.dropMinute(c.minuteToY(547, win), win, 30) === 540, String(c.dropMinute(c.minuteToY(547, win), win, 30)));
+  T('and rounds to the nearer one',
+    c.dropMinute(c.minuteToY(553, win), win, 30) === 555);
+  T('a drop above the window is clamped into it',
+    c.dropMinute(-5000, win, 30) === win.from, String(c.dropMinute(-5000, win, 30)));
+  T('a drop past the end of the day stays a real time on that day',
+    c.dropMinute(999999, win, 30) <= 1440 - c.SNAP_MINUTES);
+  T('a resize cannot go below the minimum',
+    c.dropDuration(c.minuteToY(541, win), win, 540) === c.SNAP_MINUTES);
+  T('nor above a day', c.dropDuration(999999, win, 540) === c.MAX_DURATION);
+
+  sub('the gesture has to prove it is a drag');
+  T('touch requires a deliberate hold', /const LONG_PRESS_MS = \d+;/.test(src));
+  T('and the hold is long enough not to fire on a tap', c.LONG_PRESS_MS >= 250,
+    String(c.LONG_PRESS_MS));
+  T('movement before the hold disarms it',
+    /if\(dx > CANCEL_PX \|\| dy > CANCEL_PX\) disarmDrag\(\);/.test(src));
+  T('and disarming is permanent for that gesture — a paused scroll is still a scroll',
+    /_dragArm && !_dragState[\s\S]{0,400}disarmDrag\(\)/.test(src));
+  T('a mouse uses a movement threshold instead of a hold',
+    /const MOUSE_THRESHOLD_PX = \d+;/.test(src));
+
+  sub('page scrolling is suppressed only while a drag is live');
+  T('the touchmove listener is non-passive, or it could not stop the scroll',
+    /addEventListener\('touchmove', onDocumentTouchMove, \{ passive: false \}\)/.test(src));
+  T('and it only acts during an active drag',
+    /function onDocumentTouchMove\(e\)\{\s*if\(_dragState && _dragState\.active\)/.test(src));
+  T('the timeline does not disable touch scrolling up front',
+    !/\.timeline\{[^}]*touch-action:\s*none/.test(css()));
+  T('only the resize handle opts out of it',
+    /\.blk-resize\{[\s\S]{0,200}touch-action: none/.test(css()));
+
+  sub('a resize can never begin from a move');
+  T('the handle is its own hit area', /\.blk-resize\{/.test(css()));
+  T('and the mode is decided by which element was hit',
+    /const resizeEl = ancestorWith\(e\.target, 'data-resize'\);/.test(src));
+
+  sub('a cancelled drag changes nothing');
+  T('escape ends it', /function onDragKey\(e\)\{[\s\S]{0,200}e\.key === 'Escape'/.test(src));
+  T('a cancelled drag re-renders from storage rather than keeping the pixels',
+    /if\(!commit\)\{ renderAll\(\); return; \}/.test(src));
+  T('a failed write puts the block back',
+    /if\(changed && !ok\)\{[\s\S]{0,200}renderAll\(\);/.test(src) ||
+    /could not be saved, so it was put back/.test(src));
+  T('the edge-scroll timer is cleared on every exit path',
+    (src.match(/stopEdgeScroll\(\);/g) || []).length >= 2);
+
+  sub('a repeating item cannot be dragged onto another day by accident');
+  c.items = [c.normalizeItem({
+    title: 'R', kind: 'task', date: '2026-09-07', start: 540, duration: 30,
+    recurrence: { freq: 'daily', interval: 1 }
+  })];
+  c.overrides = [];
+  T('the cross-day move is refused',
+    c.moveOccurrence(c.items[0].id, '2026-09-08', '2026-09-09', 600) === false);
+  T('and nothing was written', c.overrides.length === 0);
+  T('moving it within its own day still works',
+    c.moveOccurrence(c.items[0].id, '2026-09-08', '2026-09-08', 600) === true);
+}
+
+/* =========================================================
+   CONTRACT 25 — Auto Plan proposes, and never lies
+   ---------------------------------------------------------
+   Five rules it may not break, and the one behaviour that makes it
+   trustworthy: computing a proposal writes nothing at all.
+   ========================================================= */
+function testAutoPlan(){
+  section('CONTRACT 25 — Auto Plan proposes; only a person applies');
+  const shared = new Map();
+  const app = H.loadApp({ sharedStorage: shared });
+  const c = app.ctx;
+  c.prefs = c.normalizePrefs({ dayStart: 540, dayEnd: 1020, bufferMinutes: 0 });
+
+  const D = '2026-09-08';
+  c.items = [
+    c.normalizeItem({ title: 'Fixed', kind: 'event', date: D, start: 600, duration: 60 }),
+    c.normalizeItem({ title: 'Long',  kind: 'task',  date: D, start: 540, duration: 120 }),
+    c.normalizeItem({ title: 'Short', kind: 'task',  date: D, start: 540, duration: 30 })
+  ];
+  c.overrides = [];
+  c.persistItems();
+  const snapshot = JSON.stringify(c.items);
+
+  sub('computing a proposal changes nothing');
+  const p = c.autoPlan(D, { now: null });
+  T('the records are untouched', JSON.stringify(c.items) === snapshot);
+  T('and so is storage', c.Store.getJSON(c.KEYS.items, []).length === 3);
+  T('a proposal was produced', p.date === D && Array.isArray(p.moves));
+
+  sub('a fixed commitment never moves');
+  const fixedId = c.items[0].id;
+  T('it is not in the moves', !p.moves.some(m => m.itemId === fixedId));
+  T('and applying cannot move it either', (() => {
+    const forged = { date: D, moves: [{ itemId: fixedId, toDate: D, toStart: 900, title: 'Fixed' }],
+                     unplaced: [] };
+    c.applyProposal(forged);
+    return c.itemById(fixedId).start === 600;
+  })(), String(c.itemById(fixedId).start));
+
+  sub('applying produces a day with no overlaps');
+  const p2 = c.autoPlan(D, { now: null });
+  c.applyProposal(p2);
+  const occ = c.timedOccurrences(c.occurrencesForDate(D));
+  let clash = null;
+  for(let i = 0; i < occ.length; i++){
+    for(let j = i + 1; j < occ.length; j++){
+      if(occ[i].visibleStart < occ[j].visibleEnd && occ[j].visibleStart < occ[i].visibleEnd){
+        clash = occ[i].title + ' / ' + occ[j].title;
+      }
+    }
+  }
+  T('nothing overlaps', clash === null, clash);
+  T('the fixed commitment is still where it was', c.itemById(fixedId).start === 600);
+  T('every duration is preserved exactly',
+    c.items.every(i => i.duration === 60 || i.duration === 120 || i.duration === 30));
+  T('nothing was deleted', c.items.length === 3);
+  T('and nothing was shortened to make it fit',
+    c.items.filter(i => i.title === 'Long')[0].duration === 120);
+
+  sub('everything stays inside the planning window');
+  const win = c.dayWindow();
+  T('no block starts before the day does',
+    c.timedOccurrences(c.occurrencesForDate(D)).every(o => o.start >= win.start));
+  T('and none is placed past the end of it',
+    c.timedOccurrences(c.occurrencesForDate(D))
+      .filter(o => o.kind === 'task').every(o => o.end <= win.end));
+
+  sub('an allowed-time window is respected, including the end of it');
+  c.items = [
+    c.normalizeItem({ title: 'Morning only', kind: 'task', date: D, start: 900, duration: 60,
+                      earliest: 540, latest: 720 })
+  ];
+  c.overrides = [];
+  const p3 = c.autoPlan(D, { now: null });
+  c.applyProposal(p3);
+  const only = c.items[0];
+  T('it was moved into its window', only.start >= 540, String(only.start));
+  T('and it FINISHES by its latest, not merely starts by it',
+    only.start + only.duration <= 720, String(only.start + only.duration));
+
+  sub('work that cannot fit is reported, not hidden');
+  c.items = [
+    c.normalizeItem({ title: 'Blocker', kind: 'event', date: D, start: 540, duration: 420 }),
+    c.normalizeItem({ title: 'Homeless', kind: 'task', date: D, start: 540, duration: 120 })
+  ];
+  c.overrides = [];
+  const p4 = c.autoPlan(D, { now: null });
+  T('it is named as unplaced', p4.unplaced.length === 1 && p4.unplaced[0].title === 'Homeless');
+  T('with a reason a person can act on', p4.unplaced[0].reason.length > 8, p4.unplaced[0].reason);
+  c.applyProposal(p4);
+  T('and it still exists afterwards', c.items.length === 2);
+  T('at its original length', c.itemById(p4.unplaced[0].itemId).duration === 120);
+
+  sub('nothing is scheduled into time that has already gone');
+  c.items = [c.normalizeItem({ title: 'Later', kind: 'task', date: D, start: 540, duration: 30 })];
+  c.overrides = [];
+  const p5 = c.autoPlan(D, { now: 780 });
+  c.applyProposal(p5);
+  T('it was placed after now', c.items[0].start >= 780, String(c.items[0].start));
+
+  sub('Auto Plan never schedules over something it refuses to move');
+  /* THE DEFECT THIS PREVENTS, found by driving a real day in a browser:
+     freeGaps() counted only EVENTS as occupied, while autoPlan separately
+     refused to move a COMPLETED task. The two rules disagreed, so the packer
+     saw a finished task's time as free and scheduled another task straight on
+     top of it. One predicate now answers both questions. */
+  c.prefs = c.normalizePrefs({ dayStart: 540, dayEnd: 1020 });
+  c.items = [
+    c.normalizeItem({ title: 'Finished', kind: 'task', date: D, start: 600, duration: 60 }),
+    c.normalizeItem({ title: 'Packer',   kind: 'task', date: D, start: 960, duration: 90 })
+  ];
+  c.overrides = [];
+  c.setOccurrenceStatus(c.items[0].id, D, 'done');
+  const doneAt = c.items[0].start;
+  c.applyProposal(c.autoPlan(D, { now: null }));
+  const packed = c.items.filter(i => i.title === 'Packer')[0];
+  T('the finished task did not move', c.items[0].start === doneAt, String(c.items[0].start));
+  T('and nothing was placed on top of it',
+    packed.start + packed.duration <= doneAt || packed.start >= doneAt + 60,
+    packed.start + '+' + packed.duration + ' vs ' + doneAt);
+
+  sub('a block running in from yesterday holds its time too');
+  c.items = [
+    c.normalizeItem({ title: 'Overnight', kind: 'task', date: c.addDays(D, -1), start: 1380, duration: 480 }),
+    c.normalizeItem({ title: 'Early',     kind: 'task', date: D, start: 960, duration: 60 })
+  ];
+  c.overrides = [];
+  c.prefs = c.normalizePrefs({ dayStart: 300, dayEnd: 1020 });
+  c.applyProposal(c.autoPlan(D, { now: null }));
+  const early = c.items.filter(i => i.title === 'Early')[0];
+  T('the morning is not offered as free time', early.start >= 420, String(early.start));
+
+  sub('a finished task is not counted as work still to do');
+  c.prefs = c.normalizePrefs({ dayStart: 540, dayEnd: 660 });
+  c.items = [c.normalizeItem({ title: 'Done thing', kind: 'task', date: D, start: 540, duration: 90 })];
+  c.overrides = [];
+  c.setOccurrenceStatus(c.items[0].id, D, 'done');
+  const doneLoad = c.workloadForDate(D);
+  T('it counts as time already spent, not as demand',
+    doneLoad.flexMinutes === 0 && doneLoad.fixedMinutes === 90,
+    doneLoad.flexMinutes + '/' + doneLoad.fixedMinutes);
+  T('so a finished day is not reported as overloaded', doneLoad.isOverloaded === false);
+
+  sub('the overload number agrees with what Auto Plan can actually place');
+  /* THE DEFECT THIS PREVENTS, found by driving a real day in a browser: the
+     workload clamped every task to the planning window before counting it, so
+     a two-hour task sitting mostly outside the window counted as a few
+     minutes of demand. The day reported itself as comfortable while Auto Plan
+     simultaneously could not fit the work. Demand is now the whole duration;
+     only anchors, which cannot move, are clamped. */
+  c.prefs = c.normalizePrefs({ dayStart: 540, dayEnd: 660 });   /* two hours */
+  c.items = [
+    c.normalizeItem({ title: 'Late long', kind: 'task', date: D, start: 900, duration: 120 }),
+    c.normalizeItem({ title: 'Anchor', kind: 'event', date: D, start: 360, duration: 240 })
+  ];
+  c.overrides = [];
+  const lateLoad = c.workloadForDate(D);
+  T('a task outside the window still counts its full duration',
+    lateLoad.flexMinutes === 120, String(lateLoad.flexMinutes));
+  T('an anchor only consumes the part inside the window',
+    lateLoad.fixedMinutes === 60, String(lateLoad.fixedMinutes));
+  T('so the day is correctly reported as overloaded', lateLoad.isOverloaded === true);
+  T('by the amount that genuinely will not fit', lateLoad.overloadBy === 60,
+    String(lateLoad.overloadBy));
+  T('and Auto Plan agrees it cannot place it',
+    c.autoPlan(D, { now: null }).unplaced.length === 1);
+
+  sub('a day that cannot fit says so in minutes, not in a score');
+  c.prefs = c.normalizePrefs({ dayStart: 540, dayEnd: 660 });   /* two hours */
+  c.items = [
+    c.normalizeItem({ title: 'A', kind: 'task', date: D, start: 540, duration: 90 }),
+    c.normalizeItem({ title: 'B', kind: 'task', date: D, start: 540, duration: 75 })
+  ];
+  c.overrides = [];
+  const load = c.workloadForDate(D);
+  T('the overload is a real quantity', load.overloadBy === 45, String(load.overloadBy));
+  T('and it is flagged', load.isOverloaded === true);
+  T('no invented score is exposed',
+    load.score === undefined && load.percent === undefined && load.rating === undefined);
+  T('the wording on screen is minutes, not a percentage',
+    /will not fit/.test(js()) && !/productivity score/i.test(js()));
+}
+
+/* =========================================================
+   CONTRACT 26 — reminders never claim more than they deliver
+   ---------------------------------------------------------
+   The single most damaging thing this product could do is say a
+   reminder will arrive and then not deliver it, because the person
+   only finds out by missing something.
+   ========================================================= */
+function testReminders(){
+  section('CONTRACT 26 — a reminder promise the product can keep');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const src = js();
+
+  sub('background push is not configured, and nothing pretends otherwise');
+  T('there is no key in the client', c.PUSH_CONFIG.vapidPublicKey === null);
+  T('and the code says it is not configured', c.pushConfigured() === false);
+  T('no secret is embedded anywhere in the app',
+    !/vapid[A-Za-z]*Key\s*[:=]\s*['"][A-Za-z0-9_-]{20,}/i.test(src));
+  T('no provider key of any kind is embedded',
+    !/(sk-[A-Za-z0-9]{20,}|AIza[A-Za-z0-9_-]{20,}|BEGIN [A-Z ]*PRIVATE KEY)/.test(H.readApp()));
+
+  sub('the capability sentence is the same everywhere it is shown');
+  T('one function owns it', (src.match(/function reminderCapabilityLine\(\)/g) || []).length === 1);
+  const line = c.reminderCapabilityLine();
+  T('and it is honest about what is missing',
+    /not set up|cannot show|blocked|while Dayplan is open/.test(line), line);
+  T('the app does not describe a timer as a reminder service',
+    !/setTimeout[\s\S]{0,80}reminder/i.test(stripComments(src)));
+
+  sub('permission is asked for at the moment it is needed');
+  T('never at boot', !/Domain\.wire[\s\S]{0,900}requestNotificationPermission\(\)/.test(src));
+  T('but when a reminder is first chosen',
+    /function toggleFormReminder\([\s\S]{0,700}requestNotificationPermission\(\)/.test(src));
+  T('a blocked permission is not asked again',
+    /if\(cap === 'denied'\)\{[\s\S]{0,200}return Promise\.resolve\('denied'\)/.test(src));
+  T('and the person is told how to undo it themselves',
+    /browser.{0,40}settings/i.test(src));
+
+  sub('a reminder fires once, for the right instant');
+  c.prefs = c.normalizePrefs({});
+  c.items = [c.normalizeItem({
+    title: 'Call', kind: 'event', date: '2026-09-08', start: 600, duration: 30, reminders: [10, 30]
+  })];
+  c.overrides = [];
+  const from = c.instantOf('2026-09-08', 0).getTime();
+  const to = c.instantOf('2026-09-09', 0).getTime();
+  const due = c.dueReminders(from, to, ['2026-09-08']);
+  T('both offsets are due that day', due.length === 2, String(due.length));
+  T('the earlier one comes first', due[0].offset === 30 && due[1].offset === 10);
+  T('and each lands before the item, not after',
+    due.every(r => r.at < c.instantOf('2026-09-08', 600).getTime()));
+  T('each has a key unique to the item, day and offset',
+    due[0].key !== due[1].key && due[0].key.indexOf('2026-09-08') !== -1);
+
+  sub('a finished or skipped item stops reminding');
+  c.setOccurrenceStatus(c.items[0].id, '2026-09-08', 'done');
+  T('nothing is due once it is done',
+    c.dueReminders(from, to, ['2026-09-08']).length === 0);
+
+  sub('duplicate registrations are impossible by construction');
+  const dupes = c.normalizeItem({ title: 'X', reminders: [10, 10, 10] });
+  T('the same offset cannot be stored twice', dupes.reminders.length === 1);
+  T('and the fired set is keyed, not counted',
+    /_firedReminders\[r\.key\]/.test(src));
+
+  sub('the service worker is ready for real push without pretending to have it');
+  const sw = H.readSW();
+  T('it handles a push event', /addEventListener\('push'/.test(sw));
+  T('and a notification tap', /addEventListener\('notificationclick'/.test(sw));
+  T('a tap focuses the app rather than opening a second copy',
+    /clients\.matchAll|client\.focus/.test(sw));
+  T('it carries the day back so the right screen opens',
+    /open-item|date/.test(sw));
+}
+
+/* =========================================================
+   CONTRACT 27 — an exported calendar is a real calendar
+   ========================================================= */
+function testExport(){
+  section('CONTRACT 27 — calendar export is valid, and is not called a sync');
+  const app = H.loadApp();
+  const c = app.ctx;
+  c.tags = c.BUILT_IN_TAGS.map(c.normalizeTag);
+  c.items = [c.normalizeItem({
+    title: 'Review; with, punctuation', kind: 'event', date: '2026-09-08',
+    start: 540, duration: 45, reminders: [10], notes: 'Line one\nLine two',
+    tagId: 'tag_work'
+  })];
+  c.overrides = [];
+  const ics = c.icsForItem(c.items[0].id, '2026-09-08');
+
+  sub('the envelope is well formed');
+  T('it opens and closes a calendar',
+    ics.indexOf('BEGIN:VCALENDAR') === 0 && /END:VCALENDAR\r\n$/.test(ics));
+  T('it declares a version', /\r\nVERSION:2\.0\r\n/.test(ics));
+  T('lines are CRLF terminated, as the format requires', ics.indexOf('\r\n') !== -1);
+  T('every event is closed', (ics.match(/BEGIN:VEVENT/g) || []).length ===
+    (ics.match(/END:VEVENT/g) || []).length);
+
+  sub('times are floating local wall clock, which is what a planner means');
+  T('the start carries no zone suffix', /DTSTART:20260908T090000\r\n/.test(ics), ics.match(/DTSTART:[^\r]*/));
+  T('the end is start plus duration', /DTEND:20260908T094500/.test(ics));
+  T('no UTC marker was appended to an event time',
+    !/DT(START|END):\d{8}T\d{6}Z/.test(ics));
+
+  sub('text that would break a parser is escaped');
+  T('semicolons and commas are escaped', /SUMMARY:Review\\; with\\, punctuation/.test(ics));
+  T('newlines become the literal escape', /DESCRIPTION:Line one\\nLine two/.test(ics));
+
+  sub('a reminder travels with the event');
+  T('as a real alarm', /BEGIN:VALARM[\s\S]*?TRIGGER:-PT10M[\s\S]*?END:VALARM/.test(ics));
+
+  sub('a range export matches what the timeline shows');
+  c.items = [c.normalizeItem({
+    title: 'Daily', kind: 'task', date: '2026-09-07', start: 540, duration: 30,
+    recurrence: { freq: 'daily', interval: 1 }
+  })];
+  c.overrides = [];
+  c.skipOccurrence(c.items[0].id, '2026-09-09');
+  const week = c.icsForRange('2026-09-07', 7);
+  T('six days are exported, not seven', (week.match(/BEGIN:VEVENT/g) || []).length === 6,
+    String((week.match(/BEGIN:VEVENT/g) || []).length));
+  T('the skipped day is genuinely absent', week.indexOf('20260909T0900') === -1);
+  T('an expanded export carries no repeat rule to re-create it',
+    week.indexOf('RRULE') === -1);
+
+  sub('nothing claims to be a two-way sync');
+  const src = js();
+  T('the export is never described as a sync',
+    !/calendar sync|two-way sync|sync(s|ed|ing)? (with|to) (your |the )?calendar/i
+      .test(stripComments(src)));
+  T('and the action says what it does', /Add to calendar|calendar file/i.test(src));
+
+  sub('sharing a day says the same thing the screen does');
+  c.items = [c.normalizeItem({ title: 'Thing', kind: 'task', date: '2026-09-08', start: 540, duration: 30 })];
+  c.overrides = [];
+  const text = c.dayAsText('2026-09-08');
+  T('the shared text contains the item', text.indexOf('Thing') !== -1);
+  T('with its real times', /09:00|9:00/.test(text));
+}
+
+/* =========================================================
+   CONTRACT 28 — tags outlive their edits, and history stays honest
+   ========================================================= */
+function testTags(){
+  section('CONTRACT 28 — a tag can change without invalidating the past');
+  const shared = new Map();
+  const app = H.loadApp({ sharedStorage: shared });
+  const c = app.ctx;
+
+  sub('a first run stores nothing at all');
+  T('the built-in tags are available', c.tags.length === 8);
+  T('but they were not written to storage', c.Store.get(c.KEYS.tags) === null);
+  T('so an absent key still means a new viewer', c.Store.listKeys().length <= 1,
+    c.Store.listKeys().join(','));
+
+  sub('an item references a tag, and never copies it');
+  c.items = [c.normalizeItem({ title: 'X', tagId: 'tag_work', date: '2026-09-08', start: 540 })];
+  T('the record holds only the id', c.items[0].tagId === 'tag_work');
+  T('and no colour of its own', c.items[0].colorKey === undefined);
+  T('the colour resolves through the tag', c.colorKeyOf(c.items[0]) === 'blue');
+
+  sub('renaming and recolouring reaches every item that used it');
+  const work = c.tagById('tag_work');
+  work.name = 'Client work';
+  work.colorKey = 'teal';
+  T('the past item follows the new colour', c.colorKeyOf(c.items[0]) === 'teal');
+  T('and is still valid', c.items[0].tagId === 'tag_work');
+
+  sub('archiving hides a tag without breaking what used it');
+  work.archived = true;
+  T('it is gone from the pickers', c.activeTags().every(t => t.id !== 'tag_work'));
+  T('but still resolves for the item that has it', c.colorKeyOf(c.items[0]) === 'teal');
+
+  sub('an untagged item gets no colour rather than a meaningless one');
+  const plain = c.normalizeItem({ title: 'Y' });
+  T('there is no colour to resolve', c.colorKeyOf(plain) === null);
+
+  sub('a suggestion needs real, unambiguous history');
+  c.items = [];
+  T('no history suggests nothing', c.suggestTagFor('Review') === null);
+  c.items = [c.normalizeItem({ title: 'Review', tagId: 'tag_work' })];
+  T('one use is not a pattern', c.suggestTagFor('Review') === null);
+  c.items.push(c.normalizeItem({ title: 'review', tagId: 'tag_work' }));
+  work.archived = false;
+  T('two consistent uses suggest it', c.suggestTagFor('Review') &&
+    c.suggestTagFor('Review').id === 'tag_work');
+  T('matching ignores case and punctuation',
+    c.suggestTagFor('  REVIEW!  ') !== null);
+  c.items.push(c.normalizeItem({ title: 'Review', tagId: 'tag_focus' }));
+  c.items.push(c.normalizeItem({ title: 'Review', tagId: 'tag_study' }));
+  T('a split history stays silent rather than picking the biggest pile',
+    c.suggestTagFor('Review') === null);
+  T('an archived tag is never suggested', (() => {
+    c.items = [c.normalizeItem({ title: 'Z', tagId: 'tag_focus' }),
+               c.normalizeItem({ title: 'Z', tagId: 'tag_focus' })];
+    c.tagById('tag_focus').archived = true;
+    return c.suggestTagFor('Z') === null;
+  })());
+
+  sub('the memory is derived, so a deleted item cannot haunt it');
+  T('no counter is stored anywhere',
+    c.Store.listKeys().every(k => k.indexOf('tagMemory') === -1));
+  T('and there is no key for one', c.KEYS.tagMemory === undefined);
+}
+
+/* =========================================================
+   CONTRACT 29 — both themes are real, and resolved in one place
+   ========================================================= */
+function testTheme(){
+  section('CONTRACT 29 — light and dark are one decision, made once');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const style = css();
+
+  sub('a system preference is resolved to a literal palette');
+  T('an explicit choice wins in both directions',
+    c.resolveTheme('light', true) === 'light' && c.resolveTheme('dark', false) === 'dark');
+  T('system follows the device', c.resolveTheme('system', true) === 'dark' &&
+    c.resolveTheme('system', false) === 'light');
+  T('an unknown preference falls back to system', c.normalizeTheme('chartreuse') === 'system');
+
+  sub('there is exactly one owner of that decision');
+  T('the stylesheet has no colour-scheme media query to disagree with it',
+    !/@media \(prefers-color-scheme/.test(style));
+  T('the palette is selected by attribute', /:root\[data-theme="light"\]\{/.test(style));
+  T('and the resolver sets it', /setAttribute\('data-theme', resolved\)/.test(js()));
+  T('a system change is still followed live',
+    /if\(currentTheme === 'system'\) applyTheme\(\)/.test(js()));
+
+  sub('every colour a block can wear exists in both palettes');
+  const dark = style.slice(style.indexOf(':root{'), style.indexOf(':root[data-theme="light"]'));
+  /* Bounded to the block itself. Slicing to the end of the file would sweep in
+     every component rule that legitimately references the scale. */
+  const lightStart = style.indexOf(':root[data-theme="light"]');
+  const light = style.slice(lightStart, style.indexOf('\n}', lightStart) + 2);
+  c.TAG_COLORS.forEach(k => {
+    T('--tag-' + k + ' is defined in dark', dark.indexOf('--tag-' + k + ':') !== -1);
+    T('--tag-' + k + ' is redefined in light', light.indexOf('--tag-' + k + ':') !== -1);
+    T('--tag-' + k + '-fill exists in both',
+      dark.indexOf('--tag-' + k + '-fill:') !== -1 && light.indexOf('--tag-' + k + '-fill:') !== -1);
+  });
+  T('the text on a filled accent inverts with it',
+    light.indexOf('--accent-contrast:') !== -1);
+  T('and so does the clock line, which must not vanish on white',
+    light.indexOf('--now-line:') !== -1);
+
+  sub('every colour used as text is readable on its own ground');
+  /* Measured, not asserted. A palette is the one part of a design system that
+     looks fine to whoever picked it and fails for someone else, so the numbers
+     are computed here from the tokens themselves. The clock label failed this
+     at 4.17:1 in light mode before it was measured. */
+  {
+    const tokens = (block) => {
+      const map = {};
+      const re = /(--[a-z0-9-]+):\s*([^;]+);/g;
+      let m;
+      while((m = re.exec(block)) !== null) map[m[1]] = m[2].trim();
+      return map;
+    };
+    const rootBlock = style.slice(style.indexOf(':root{'), style.indexOf(':root[data-theme="light"]'));
+    const lightStart2 = style.indexOf(':root[data-theme="light"]');
+    const lightBlock = style.slice(lightStart2, style.indexOf('\n}', lightStart2));
+    const darkMap = tokens(rootBlock);
+    const lightMap = Object.assign({}, darkMap, tokens(lightBlock));
+
+    const resolve = (map, name, depth) => {
+      let v = map[name];
+      let guard = 0;
+      while(v && v.indexOf('var(') === 0 && guard++ < 6){
+        v = map[v.slice(4, v.indexOf(')')).trim()];
+      }
+      return v;
+    };
+    const rgbOf = (hex) => {
+      const h = String(hex || '').trim();
+      const m = /^#([0-9a-f]{6})$/i.exec(h);
+      if(!m) return null;
+      const n = parseInt(m[1], 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    };
+    const lum = (rgb) => {
+      const c = rgb.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    const ratio = (a, b) => {
+      const la = lum(a), lb = lum(b);
+      return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+    };
+
+    /* Pairs that are drawn as TEXT, so the bar is 4.5 rather than the 3.0
+       that applies to a rail or an icon. */
+    const pairs = [
+      ['--text', '--surface'], ['--text-dim', '--surface'], ['--text-faint', '--surface'],
+      ['--accent', '--bg'], ['--now-line', '--bg'],
+      ['--success', '--surface'], ['--warning', '--surface'], ['--danger', '--surface'],
+      ['--accent-contrast', '--accent']
+    ];
+    [['dark', darkMap], ['light', lightMap]].forEach(entry => {
+      const label = entry[0], map = entry[1];
+      pairs.forEach(p => {
+        const fg = rgbOf(resolve(map, p[0])), bg = rgbOf(resolve(map, p[1]));
+        if(!fg || !bg){ T(label + ': ' + p[0] + ' resolves to a colour', false, String(resolve(map, p[0]))); return; }
+        const r = ratio(fg, bg);
+        T(label + ': ' + p[0] + ' on ' + p[1] + ' clears 4.5:1', r >= 4.5, r.toFixed(2));
+      });
+    });
+
+    /* A tag hue is only ever a rail, an icon or a swatch — never body text —
+       so it answers to the 3:1 bar for graphical objects. */
+    [['dark', darkMap], ['light', lightMap]].forEach(entry => {
+      const label = entry[0], map = entry[1];
+      const weakest = c.TAG_COLORS.map(k => {
+        const fg = rgbOf(resolve(map, '--tag-' + k)), bg = rgbOf(resolve(map, '--bg'));
+        return { k: k, r: fg && bg ? ratio(fg, bg) : 0 };
+      }).sort((a, b) => a.r - b.r)[0];
+      T(label + ': every tag hue clears 3:1 as a graphic', weakest.r >= 3,
+        weakest.k + ' ' + weakest.r.toFixed(2));
+    });
+  }
+
+  sub('a block never relies on colour alone');
+  T('it carries an icon as well as a rail', /class="blk-icon"/.test(js()));
+  T('and its title in text', /class="blk-title"/.test(js()));
+  T('a completed block is marked, not merely faded',
+    /\.blk-done \.blk-title\{ text-decoration: line-through/.test(style));
+
+  sub('the scale does not change with the palette');
+  T('no type token is redefined in the light block',
+    light.indexOf('--fs-') === -1);
+  T('and no spacing token either', light.indexOf('--space-') === -1);
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,
-  testAccessibility, testContamination, testSourcesOfTruth
+  testAccessibility, testContamination, testSourcesOfTruth,
+  /* the product's own */
+  testTime, testModel, testRecurrence, testTimeline, testDrag,
+  testAutoPlan, testReminders, testExport, testTags, testTheme
 };

@@ -1,8 +1,8 @@
 {
-  "name": "app-starter",
+  "name": "dayplan",
   "version": "0.1.0",
   "private": true,
-  "description": "An opinionated, offline-capable mobile app foundation.",
+  "description": "Plan your day on a timeline you can move.",
   "scripts": {
     "verify": "node test/run.js verify",
     "test": "node test/run.js contracts",

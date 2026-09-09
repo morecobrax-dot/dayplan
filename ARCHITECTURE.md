@@ -1,6 +1,10 @@
-# Starter architecture
+# Architecture
 
-How the pieces fit, and where your product goes.
+How the pieces fit, and where things go.
+
+The FOUNDATION described below predates this product and is deliberately
+ignorant of it. The seam between the two is one object with four members, and
+it is why the foundation can be read without knowing what a schedule is.
 
 ---
 
@@ -13,7 +17,7 @@ The whole application is one file with four blocks, in this order:
 | `<head>` | Meta, viewport, manifest link. The block between `APP-META-BEGIN/END` is **derived** — written by `config:sync`. |
 | One `<style>` | Design tokens, then base, shell, controls, surfaces, overlay presentation, toast, responsive. |
 | `<body>` markup | The shell, the tab views, and every overlay declared statically. All other DOM is generated. |
-| One `<script>` | Config, release notes, storage, migration, overlay engine, toast, confirmation, icons, navigation, demo domain, boot. |
+| One `<script>` | Config, release notes, storage, migration, overlay engine, toast, confirmation, icons, navigation, the schedule domain, boot. |
 
 **Keep it to one substantial `<script>` block.** The test harness evaluates
 only the largest one. Code in a second block, or in a linked `.js` file, is
@@ -175,7 +179,7 @@ Aim for high-value contracts, not volume.
 ## The foundation → domain seam
 
 The foundation reaches a product through exactly four points, declared together
-just above the demo section:
+just above the product domain:
 
 ```js
 const Domain = {
@@ -186,9 +190,9 @@ const Domain = {
 };
 ```
 
-They are no-ops by default, so **deleting the demo leaves an app that still
+They are no-ops by default, so **deleting the product domain leaves an app that still
 boots**, into a working but empty shell. `boot()` and `renderAll()` call only
-these, and a contract asserts that no foundation code names anything the demo
+these, and a contract asserts that no foundation code names anything the product
 defines.
 
 Two more things follow the same rule rather than being special-cased:
@@ -198,10 +202,63 @@ Two more things follow the same rule rather than being special-cased:
   `Domain.tabIcons`, so adding a tab is a markup edit plus one icon entry.
 - **Backup import** merges whatever collections the backup file itself
   declares, recognising a record by it having an `id`. A product that replaces
-  the demo does not have to rewrite import — and, more importantly, import
+  the product does not have to rewrite import — and, more importantly, import
   cannot silently restore nothing while reporting success.
 
-## Where your product goes
+## The product domain
+
+Everything below the `PRODUCT DOMAIN — Schedule` banner in `index.html` is
+Dayplan. Nothing above it names anything declared there, and contract 19 proves
+it by slicing the file at that banner and scanning the remainder.
+
+### The model
+
+Four product concepts, **two kinds and two orthogonal flags** — not four record
+types. Four types would mean four branches through the scheduler, the drag
+engine and every renderer, differing only by accident.
+
+```
+Item { kind: 'event' | 'task' }
+   date === null        → UNSCHEDULED TASK   (Inbox)
+   recurrence !== null  → ROUTINE            (a series)
+   kind === 'event'     → FIXED COMMITMENT   Auto Plan may never move it
+   kind === 'task'      → FLEXIBLE           Auto Plan may place it
+```
+
+What `kind` actually changes is one thing, and it is the thing that matters:
+whether the planner is allowed to move it.
+
+**Derived, never stored:** end times, the occurrences of a series, tag usage
+history, a day's workload, conflicts, and the colour of anything. Each of them
+can disagree with its parts the moment it is written down.
+
+### Recurrence: three words, three owners
+
+| | |
+|---|---|
+| **Series** | The stored `Item` whose `recurrence` is not null. Owns the pattern. |
+| **Occurrence** | A computed appearance on one civil date. **Never stored.** |
+| **Exception** | A stored `Override`, keyed by series id *and* date. The only thing an occurrence edit ever writes. |
+
+Because an occurrence has no stored existence, editing one **cannot** reach the
+series — there is no field on the series that an occurrence edit knows how to
+write. Corrupting a routine by editing one of its days is not guarded against;
+it is structurally unavailable.
+
+### Time
+
+Read the `TIME` section in `index.html` before touching anything with a date in
+it. Three rules, each of which has a wrong obvious version:
+
+1. Never `new Date('2026-09-08')` — a date-only string is parsed as UTC.
+2. Never add a day as `+86400000` — a DST day is 23 or 25 hours long.
+3. Never derive a duration by subtracting two instants — 09:00 to 10:00 is
+   sixty minutes on every day of the year.
+
+Contract 20 runs the whole layer under eight real timezones in child processes.
+Every assertion in it passes in UTC.
+
+### Where things go
 
 | You are adding | Put it |
 |---|---|
@@ -210,9 +267,19 @@ Two more things follow the same rule rather than being special-cased:
 | A decision or short form | A `.overlay` sheet |
 | Persistent state | A key in `KEYS`, under `data.` or `ui.` |
 | A data shape change | Bump `DATA_SCHEMA_VERSION`, add a migration |
-| A category colour | Token layer 4 |
-| A new primitive | Only if the demo or your product actually uses it |
+| A tag colour | Token layer 4, **in both palettes** |
+| A rule about what may move | `isMovableOccurrence()` — never a second copy |
 | A release | An `APP_UPDATES` entry, then `npm run config:sync` |
 
-Replace the `DEMO DOMAIN` section wholesale. Nothing above it depends on
-anything below it.
+### Two rules this product added to the foundation
+
+**Appearance is resolved once.** `system` is turned into a literal
+`data-theme="light"` or `"dark"` by `applyTheme()`, so the stylesheet only ever
+answers "light or dark". There is deliberately **no** `prefers-color-scheme`
+block: a media query plus an attribute is two owners for one decision, and they
+disagree the moment someone picks a theme that is not their system's.
+
+**One predicate owns "can this move?"** `isMovableOccurrence()`. This was two
+predicates once — `freeGaps()` treated only commitments as occupied while Auto
+Plan separately refused to move a completed task — and the packer scheduled
+straight over finished work. Contract 25 keeps them one.

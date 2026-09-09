@@ -40,7 +40,20 @@ const SUITES = [
   C.testStress,
   C.testSourcesOfTruth,
   C.testPortability,
-  C.testContamination
+  C.testContamination,
+  /* The product's own contracts run last: they are meaningless if the
+     foundation beneath them is broken, and a failure there should be the
+     first thing reported rather than the twentieth. */
+  C.testTime,
+  C.testModel,
+  C.testRecurrence,
+  C.testTimeline,
+  C.testDrag,
+  C.testAutoPlan,
+  C.testReminders,
+  C.testExport,
+  C.testTags,
+  C.testTheme
 ];
 
 async function main(){

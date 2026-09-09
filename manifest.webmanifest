@@ -1,7 +1,7 @@
 {
-  "name": "App Starter",
-  "short_name": "Starter",
-  "description": "An opinionated, offline-capable mobile app foundation.",
+  "name": "Dayplan",
+  "short_name": "Dayplan",
+  "description": "Plan your day on a timeline you can move.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",
