@@ -221,3 +221,9 @@ it is named in brackets.
 46. **Nothing floats over a control.** The add button covered the tick box
     once; the tick box moved to the leading edge. A visible control that
     cannot be tapped is worse than a disabled one.
+
+47. **A source-scanning contract reads `stripComments(js())`, never `js()`.**
+    Every rule in this codebase is explained by a comment next to the code it
+    governs, and those comments quote the thing being forbidden. Three
+    contracts have now failed on their own documentation. Scan the code; for a
+    rule about markup, scan `H.bodyBlock()`.

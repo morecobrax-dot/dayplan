@@ -41,19 +41,34 @@
   --font-display: var(--font-ui);
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --brand-accent: #7AA2FF;
-  --brand-accent-deep: #4C6EF5;
+  /* INDIGO NIGHT. The ground is a deep blue, not a neutral charcoal —
+     that single change is most of what separates this product from the
+     foundation it was built on.
+
+     Three accent stops rather than two, because one value cannot do both
+     jobs: --accent is bright enough to be READ as text on the ground,
+     --accent-fill is dark enough to carry WHITE text on a button, and
+     --accent-deep closes the gradient. A two-stop ramp forces a choice
+     between unreadable labels and unreadable buttons. */
+  --brand-accent: #8E7CFF;
+  --brand-accent-fill: #6E5CF0;
+  --brand-accent-deep: #4F3FD6;
 
   /* The ground and the surfaces that sit on it. These are literal values,
      not computed from --brand-ground, because the steps between them were
      chosen for contrast rather than for arithmetic. Retheming means editing
      this ramp — five values, all here. Changing only the ground and leaving
      the ramp behind is what makes a rebrand look half-finished. */
-  --brand-ground: #0B0F16;
-  --brand-surface: #121824;
-  --brand-surface-raised: #1A2230;
-  --brand-surface-sunken: #0A0E14;
-  --brand-border: #2A3547;
+  --brand-ground: #0A0F1D;
+  --brand-surface: #141B2E;
+  --brand-surface-raised: #1E2740;
+  --brand-surface-sunken: #060A14;
+  --brand-border: #2B3654;
+
+  /* The ambient wash behind the Today hero. Depth belongs to ONE surface;
+     spread over the whole app it stops reading as light and starts reading
+     as a gradient someone left on. */
+  --brand-glow: radial-gradient(120% 90% at 50% -20%, rgba(110,92,240,0.34) 0%, rgba(110,92,240,0.10) 42%, rgba(10,15,29,0) 74%);
 
   /* ---- 2 · SEMANTIC --------------------------------------------
      Roles, not colours. Components only ever reference these, so a
@@ -63,29 +78,32 @@
   --surface-raised: var(--brand-surface-raised);
   --surface-sunken: var(--brand-surface-sunken);
   --border: var(--brand-border);
-  --border-quiet: rgba(42,53,71,0.55);
-  --edge-hi: rgba(238,241,245,0.05);
+  --border-quiet: rgba(43,54,84,0.62);
+  --edge-hi: rgba(226,232,248,0.06);
+  --glow: var(--brand-glow);
 
-  --text: #EEF1F5;
-  --text-dim: #9AA6B8;
-  /* Measured at ~4.1:1 on --surface. Recessive to --text-dim, still
-     comfortably readable at micro sizes. */
-  --text-faint: #7A8598;
+  --text: #E8ECF8;
+  --text-dim: #9BA7C6;
+  /* Measured on --surface. Recessive to --text-dim, still readable at the
+     micro sizes the hour rail uses. */
+  --text-faint: #79859F;
 
   --accent: var(--brand-accent);
+  --accent-fill: var(--brand-accent-fill);
   --accent-deep: var(--brand-accent-deep);
-  --accent-soft: rgba(122,162,255,0.14);
-  /* Text drawn ON a filled accent surface. */
-  --accent-contrast: #08111F;
+  --accent-soft: rgba(142,124,255,0.15);
+  /* Text drawn ON a filled accent surface — never on --accent, which is the
+     bright reading stop. */
+  --accent-contrast: #FFFFFF;
 
-  --success: #4B9C81;
-  --success-soft: rgba(75,156,129,0.12);
-  --warning: #BD9260;
-  --warning-soft: rgba(189,146,96,0.12);
-  --danger: #E5675F;
-  --danger-soft: rgba(229,103,95,0.12);
+  --success: #52B98C;
+  --success-soft: rgba(82,185,140,0.13);
+  --warning: #D3A45E;
+  --warning-soft: rgba(211,164,94,0.13);
+  --danger: #F0736A;
+  --danger-soft: rgba(240,115,106,0.13);
 
-  --gradient-accent: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  --gradient-accent: linear-gradient(135deg, var(--accent-fill), var(--accent-deep));
 
   /* ---- 3 · SCALE ------------------------------------------------ */
   /* Type: one token per role, so two labels of the same kind cannot
@@ -118,7 +136,7 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.20);
   --shadow-md: 0 3px 10px rgba(0,0,0,0.24);
   --shadow-lg: 0 10px 28px rgba(0,0,0,0.38);
-  --shadow-accent: 0 2px 12px rgba(122,162,255,0.20);
+  --shadow-accent: 0 2px 14px rgba(110,92,240,0.30);
 
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --dur-fast: 0.12s;
@@ -152,19 +170,29 @@
      eight colours from becoming card soup, and it is why the fill
      alpha is low and identical across the eight: two tags must
      differ in hue, not in how loud they are. */
-  --tag-blue:   #6E9BF5;  --tag-blue-fill:   rgba(110,155,245,0.15);
-  --tag-violet: #A98BF5;  --tag-violet-fill: rgba(169,139,245,0.15);
-  --tag-rose:   #EE7BAA;  --tag-rose-fill:   rgba(238,123,170,0.15);
-  --tag-red:    #EF7B72;  --tag-red-fill:    rgba(239,123,114,0.15);
-  --tag-orange: #EFA063;  --tag-orange-fill: rgba(239,160,99,0.15);
-  --tag-amber:  #DCC061;  --tag-amber-fill:  rgba(220,192,97,0.15);
-  --tag-green:  #5FC094;  --tag-green-fill:  rgba(95,192,148,0.15);
-  --tag-teal:   #55B8C8;  --tag-teal-fill:   rgba(85,184,200,0.15);
+  /* Eight hues spaced around the wheel and retuned for the indigo ground.
+     The KEYS never change — a stored tag references one by name — so a
+     retheme moves the values and leaves every existing tag valid. None of
+     them is the accent's violet-blue or the clock line's crimson at full
+     strength, so a rail is never mistaken for a control or for now. */
+  --tag-blue:   #5B9DFF;  --tag-blue-fill:   rgba(91,157,255,0.16);
+  --tag-violet: #B57BFF;  --tag-violet-fill: rgba(181,123,255,0.16);
+  --tag-rose:   #FF6FC1;  --tag-rose-fill:   rgba(255,111,193,0.16);
+  --tag-red:    #FF7F6E;  --tag-red-fill:    rgba(255,127,110,0.16);
+  --tag-orange: #FF9F45;  --tag-orange-fill: rgba(255,159,69,0.16);
+  --tag-amber:  #EFC94C;  --tag-amber-fill:  rgba(239,201,76,0.16);
+  --tag-green:  #5CD97E;  --tag-green-fill:  rgba(92,217,126,0.16);
+  --tag-teal:   #35C8CE;  --tag-teal-fill:   rgba(53,200,206,0.16);
 
   /* The timeline's own structure, which is not a tag colour. */
+  /* Derived, not literal. Written as its own dark rgba this was defined in
+     ONE palette, so light mode drew the timeline's hour lines in the dark
+     theme's colour — nearly black on paper. */
   --rail-line: var(--border-quiet);
-  --now-line: #FF6B57;
-  --now-line-soft: rgba(255,107,87,0.18);
+  /* Signal crimson, and the only thing in the product wearing it. The accent
+     is violet precisely so that red can mean one thing: this is now. */
+  --now-line: #FF3B4E;
+  --now-line-soft: rgba(255,59,78,0.18);
 
   /* Native form controls and scrollbars follow the palette too. The
      light block below flips this; there is no third state, because
@@ -189,55 +217,60 @@
    tag, status or piece of secondary text is legible in one theme
    and not the other. */
 :root[data-theme="light"]{
-  --brand-accent: #3457D5;
-  --brand-accent-deep: #2340B0;
+  --brand-accent: #4F3FD6;
+  --brand-accent-fill: #5A48DD;
+  --brand-accent-deep: #4132B8;
 
-  --brand-ground: #F2F4F8;
+  /* Paper with a blue cast, so light mode belongs to the same product as
+     the indigo night rather than reading as a different app. */
+  --brand-ground: #F3F5FC;
   --brand-surface: #FFFFFF;
-  --brand-surface-raised: #F7F9FC;
-  --brand-surface-sunken: #E9EDF3;
-  --brand-border: #D8DEE8;
+  --brand-surface-raised: #F6F8FE;
+  --brand-surface-sunken: #E7ECF8;
+  --brand-border: #D5DCEE;
+  --brand-glow: radial-gradient(120% 90% at 50% -20%, rgba(90,72,221,0.16) 0%, rgba(90,72,221,0.05) 44%, rgba(243,245,252,0) 74%);
 
-  --border-quiet: rgba(216,222,232,0.85);
+  --border-quiet: rgba(213,220,238,0.9);
+  --glow: var(--brand-glow);
   /* The top-edge highlight is a light source from above. On a light
      ground that reads as a shadow, not a highlight, so it inverts. */
   --edge-hi: rgba(16,21,29,0.03);
 
-  --text: #10151D;
-  --text-dim: #545E6E;
-  /* Measured at ~5.1:1 on --surface, recessive to --text-dim. The dark
-     partner is ~4.1:1; both clear the floor for their own ground. */
-  --text-faint: #6B7686;
+  --text: #0F1526;
+  --text-dim: #4E5872;
+  /* Measured on --surface, recessive to --text-dim. Both themes clear the
+     floor for their own ground. */
+  --text-faint: #6B7590;
 
-  --accent-soft: rgba(52,87,213,0.10);
-  /* Text drawn ON the filled accent. The light accent is dark, so this
-     inverts with it — a fixed value would fail in one theme. */
+  --accent-fill: var(--brand-accent-fill);
+  --accent-soft: rgba(79,63,214,0.10);
+  /* White on the filled accent in both themes — the fill stop exists so
+     that stays true without darkening the reading stop. */
   --accent-contrast: #FFFFFF;
 
-  --success: #1E7A55;  --success-soft: rgba(30,122,85,0.11);
+  --success: #1B7A52;  --success-soft: rgba(27,122,82,0.11);
   --warning: #8A6113;  --warning-soft: rgba(138,97,19,0.12);
-  --danger:  #C0392B;  --danger-soft:  rgba(192,57,43,0.10);
+  --danger:  #BE3626;  --danger-soft:  rgba(190,54,38,0.10);
 
   /* Black at dark-mode opacity reads as soot on a light ground. */
   --shadow-sm: 0 1px 2px rgba(16,21,29,0.06);
   --shadow-md: 0 3px 10px rgba(16,21,29,0.08);
   --shadow-lg: 0 10px 28px rgba(16,21,29,0.14);
-  --shadow-accent: 0 2px 12px rgba(52,87,213,0.18);
+  --shadow-accent: 0 2px 14px rgba(90,72,221,0.22);
 
-  --tag-blue:   #2F63C9;  --tag-blue-fill:   rgba(47,99,201,0.10);
-  --tag-violet: #6E44CE;  --tag-violet-fill: rgba(110,68,206,0.10);
-  --tag-rose:   #C33B79;  --tag-rose-fill:   rgba(195,59,121,0.10);
-  --tag-red:    #C6443A;  --tag-red-fill:    rgba(198,68,58,0.10);
-  --tag-orange: #B26418;  --tag-orange-fill: rgba(178,100,24,0.10);
-  --tag-amber:  #8A6E12;  --tag-amber-fill:  rgba(138,110,18,0.10);
-  --tag-green:  #1E7A55;  --tag-green-fill:  rgba(30,122,85,0.10);
-  --tag-teal:   #17758A;  --tag-teal-fill:   rgba(23,117,138,0.10);
+  --tag-blue:   #2B5FD0;  --tag-blue-fill:   rgba(43,95,208,0.10);
+  --tag-violet: #7038C9;  --tag-violet-fill: rgba(112,56,201,0.10);
+  --tag-rose:   #BE2E86;  --tag-rose-fill:   rgba(190,46,134,0.10);
+  --tag-red:    #C0422F;  --tag-red-fill:    rgba(192,66,47,0.10);
+  --tag-orange: #A85E10;  --tag-orange-fill: rgba(168,94,16,0.10);
+  --tag-amber:  #85690E;  --tag-amber-fill:  rgba(133,105,14,0.10);
+  --tag-green:  #14764B;  --tag-green-fill:  rgba(20,118,75,0.10);
+  --tag-teal:   #0F6F80;  --tag-teal-fill:   rgba(15,111,128,0.10);
 
-  /* 5.09:1 on the light ground and 5.6:1 on a card. The obvious brighter
-     red measured 4.17, which fails for an 11px bold label — and this is the
-     label that tells someone what time it is. */
-  --now-line: #C42E17;
-  --now-line-soft: rgba(196,46,23,0.14);
+  /* Measured against the light ground for an 11px bold label, the tightest
+     text in the product. */
+  --now-line: #C81E32;
+  --now-line-soft: rgba(200,30,50,0.13);
 
   color-scheme: light;
 }
@@ -1331,6 +1364,175 @@ body.dragging .blk{ cursor: grabbing; }
   .fab{ width: 44px; height: 44px; }
 }
 
+
+/* =========================================================
+   THE SLIDER CONTROL
+   ---------------------------------------------------------
+   A native range input, dressed. The filled half of the track is
+   painted from --pct, set by the component, because only one engine
+   ships a progress pseudo-element and a native fill would appear on
+   some platforms and not others.
+   ========================================================= */
+.ctl{
+  padding: var(--space-md) 0 var(--space-sm);
+  border-bottom: 1px solid var(--border-quiet);
+}
+.ctl:last-child{ border-bottom: 0; }
+.ctl-head{ display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md); }
+.ctl-label{
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 700; color: var(--text-faint);
+}
+.ctl-value{
+  font-size: var(--fs-section); font-weight: 650; color: var(--text);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.ctl-row{ display: flex; align-items: center; gap: var(--space-xs); margin-top: var(--space-xs); }
+.ctl-nudge{
+  flex: none; width: var(--touch-min); height: var(--touch-min);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text-dim);
+  font-family: inherit; font-size: var(--fs-title); line-height: 1; cursor: pointer;
+}
+.ctl-nudge:active{ background: var(--surface-raised); }
+.ctl-hint{ font-size: var(--fs-meta); color: var(--text-faint); margin-top: var(--space-xs); }
+
+input[type="range"].ctl-range{
+  flex: 1; min-width: 0;
+  -webkit-appearance: none; appearance: none;
+  height: var(--touch-min);
+  margin: 0; padding: 0; background: transparent; cursor: pointer;
+  /* The browser keeps vertical panning; the control keeps horizontal drags.
+     Without this the page and the slider argue over every gesture. */
+  touch-action: pan-y;
+}
+input[type="range"].ctl-range:focus{ outline: none; }
+input[type="range"].ctl-range:focus-visible::-webkit-slider-thumb{
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-md);
+}
+input[type="range"].ctl-range::-webkit-slider-runnable-track{
+  height: 10px; border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--accent-fill) var(--pct, 0%), var(--surface-sunken) var(--pct, 0%));
+  border: 1px solid var(--border);
+}
+input[type="range"].ctl-range::-webkit-slider-thumb{
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; border-radius: var(--radius-pill);
+  background: var(--gradient-accent);
+  border: 2px solid var(--surface);
+  box-shadow: var(--shadow-md);
+  margin-top: -9px;
+}
+input[type="range"].ctl-range::-moz-range-track{
+  height: 10px; border-radius: var(--radius-pill);
+  background: var(--surface-sunken); border: 1px solid var(--border);
+}
+input[type="range"].ctl-range::-moz-range-progress{
+  height: 10px; border-radius: var(--radius-pill); background: var(--accent-fill);
+}
+input[type="range"].ctl-range::-moz-range-thumb{
+  width: 24px; height: 24px; border-radius: var(--radius-pill);
+  background: var(--accent-fill); border: 2px solid var(--surface); box-shadow: var(--shadow-md);
+}
+
+/* ---- the schedule switch ---- */
+.sched-toggle{
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);
+  padding: var(--space-md) 0; border-bottom: 1px solid var(--border-quiet);
+}
+.sched-copy{ min-width: 0; }
+.sched-title{ display: block; font-size: var(--fs-body); color: var(--text); }
+.sched-hint{ display: block; font-size: var(--fs-meta); color: var(--text-dim); margin-top: 2px; }
+.sched-fields{ padding-top: var(--space-xs); }
+
+/* =========================================================
+   THE TODAY HERO
+   ========================================================= */
+.hero{
+  position: relative;
+  margin: 0 calc(-1 * var(--space-lg)) var(--space-lg);
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  overflow: hidden;
+  isolation: isolate;
+}
+.hero-glow{
+  position: absolute; inset: -40% -20% auto -20%; height: 320px;
+  background: var(--glow); z-index: -1; pointer-events: none;
+}
+.hero-nav{ display: flex; align-items: center; gap: var(--space-sm); }
+.hero-arrow{
+  flex: none; width: var(--touch-min); height: var(--touch-min);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text-dim); cursor: pointer;
+}
+.hero-arrow:active{ background: var(--surface-raised); color: var(--text); }
+.hero-date{
+  flex: 1; min-width: 0; min-height: var(--touch-min);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: none; border: 0; cursor: pointer; font-family: inherit; padding: 0;
+}
+.hero-rel{ font-size: var(--fs-section); font-weight: 700; color: var(--text); line-height: var(--lh-tight); letter-spacing: -0.02em; }
+.hero-full{ font-size: var(--fs-meta); color: var(--text-dim); margin-top: 2px; }
+
+.hero-body{
+  position: relative;
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  border: 1px solid var(--border-quiet);
+  box-shadow: var(--shadow-md);
+}
+.hero-body::before{
+  content: ""; position: absolute; left: 0; top: var(--space-lg); bottom: var(--space-lg);
+  width: 3px; border-radius: var(--radius-pill);
+  background: var(--c, var(--accent));
+}
+.hero-quiet::before{ background: var(--border); }
+.hero-kicker{
+  display: block;
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.1em;
+  font-weight: 700; color: var(--c, var(--accent));
+}
+.hero-quiet .hero-kicker{ color: var(--text-faint); }
+.hero-title{
+  font-size: var(--fs-display); font-weight: 700; line-height: var(--lh-tight);
+  letter-spacing: -0.02em; margin: var(--space-xs) 0 0; color: var(--text);
+  text-wrap: balance;
+}
+.hero-meta{ font-size: var(--fs-support); color: var(--text-dim); margin: var(--space-xs) 0 0; }
+.hero-prog{
+  height: 5px; border-radius: var(--radius-pill); background: var(--surface-sunken);
+  margin-top: var(--space-md); overflow: hidden;
+}
+.hero-prog span{ display: block; height: 100%; background: var(--c, var(--accent)); border-radius: var(--radius-pill); }
+.hero-open{
+  margin-top: var(--space-md); min-height: var(--touch-min); padding: 0 var(--space-lg);
+  border-radius: var(--radius-pill); border: 0;
+  background: var(--gradient-accent); color: var(--accent-contrast);
+  font-family: inherit; font-size: var(--fs-support); font-weight: 650; cursor: pointer;
+  box-shadow: var(--shadow-accent);
+}
+
+.hero-up{ margin-top: var(--space-sm); }
+.hero-up-row{
+  display: flex; align-items: center; gap: var(--space-sm);
+  width: 100%; min-height: var(--touch-min); padding: var(--space-sm) var(--space-md);
+  background: none; border: 0; cursor: pointer; text-align: left; font-family: inherit;
+}
+.hero-up-rail{ width: 3px; align-self: stretch; border-radius: var(--radius-pill); background: var(--c, var(--border)); }
+.hero-up-title{ flex: 1; font-size: var(--fs-support); color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero-up-time{ font-size: var(--fs-meta); color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+/* The FAB picks up the ambient glow so it reads as the one lit thing. */
+.fab{ box-shadow: var(--shadow-lg), var(--shadow-accent); }
+
+@media (min-width: 560px){
+  .hero{ margin-left: 0; margin-right: 0; border-radius: var(--radius-xl); }
+}
+
 </style>
 </head>
 <body>
@@ -1402,11 +1604,8 @@ body.dragging .blk{ cursor: grabbing; }
                autocomplete="off" aria-describedby="quickTitleError">
         <div class="field-message" id="quickTitleError" role="alert"></div>
       </div>
-      <div class="field">
-        <label for="quickTime">At what time?</label>
-        <input type="time" id="quickTime">
-        <div class="field-hint" id="quickWhen">Optional. Without a time this goes to your inbox.</div>
-      </div>
+      <div id="quickSchedToggle"></div>
+      <div id="quickSchedFields" class="sched-fields"></div>
       <span class="form-label" id="quickTagLabel">Tag</span>
       <div class="tagrow" id="quickTags" role="group" aria-labelledby="quickTagLabel"></div>
     </div>
@@ -1460,21 +1659,15 @@ body.dragging .blk{ cursor: grabbing; }
         <div class="field-hint" id="itemKindHint">Needs time but can be moved.</div>
       </div>
 
-      <div class="field-pair">
+      <div id="itemSchedToggle"></div>
+      <div id="itemSchedFields" class="sched-fields">
         <div class="field">
           <label for="itemDate">Day</label>
           <input type="date" id="itemDate">
         </div>
-        <div class="field">
-          <label for="itemTime">Start</label>
-          <input type="time" id="itemTime">
-        </div>
+        <div id="itemTimeHost"></div>
       </div>
-      <div class="field">
-        <label for="itemDuration">How long, in minutes</label>
-        <input type="number" id="itemDuration" min="15" max="1440" step="5" inputmode="numeric">
-        <div class="field-hint">Leave the day and start empty to keep this in your inbox.</div>
-      </div>
+      <div id="itemDurHost"></div>
 
       <span class="form-label" id="itemTagLabel">Tag</span>
       <div class="tagrow" id="itemTags" role="group" aria-labelledby="itemTagLabel"></div>
@@ -1507,16 +1700,8 @@ body.dragging .blk{ cursor: grabbing; }
           <input type="date" id="itemDeadline">
           <div class="field-hint">Auto Plan places work with a nearer deadline first.</div>
         </div>
-        <div class="field-pair">
-          <div class="field">
-            <label for="itemEarliest">Not before</label>
-            <input type="time" id="itemEarliest">
-          </div>
-          <div class="field">
-            <label for="itemLatest">Finished by</label>
-            <input type="time" id="itemLatest">
-          </div>
-        </div>
+        <div id="itemWindowToggle"></div>
+        <div id="itemWindowFields" class="sched-fields"></div>
         <div class="field">
           <label for="itemNote">Notes</label>
           <textarea id="itemNote" maxlength="2000" placeholder="Anything worth remembering."></textarea>
@@ -1776,6 +1961,27 @@ function validateAppId(id){
    New products replace this array wholesale. See NEW-PROJECT.md.
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v0-2-0',
+    version: '0.2.0',
+    title: 'Its own night sky',
+    date: '2026-09-08',
+    summary: 'Times are set by sliding, Today opens on the day itself, and the app looks like Dayplan rather than the foundation it grew from.',
+    newFeatures: [
+      'A slider sets every time and every length — drag it, or nudge it five minutes at a time',
+      'Today opens on the day itself: what is happening now, how far through it you are, and what follows'
+    ],
+    improvements: [
+      'A deep indigo palette with one warm signal, so a block, a control and the clock line can never be mistaken for each other',
+      'Quick capture and the full editor now use the same controls, in the same order, with the same wording',
+      'Choosing a time no longer depends on the phone’s own time picker, which rendered as an unlabelled pill on iPhone',
+      'Your day’s start and end are set with the same slider as everything else'
+    ],
+    fixes: [
+      'The arrows on Today change the day again — every step was being undone by the repaint that followed it',
+      'The timeline’s hour lines are readable in light mode instead of drawing in the dark theme’s colour'
+    ]
+  },
   {
     id: 'v0-1-0',
     version: '0.1.0',
@@ -4131,11 +4337,23 @@ let planMode = 'day';            /* 'day' | 'week' */
 let inboxFilter = 'all';
 let _nowTimer = null;
 
+/* What todayCivil() said last time this ran. Without it there is no way to
+   tell "the clock passed midnight" from "the viewer chose another day" — and
+   the first version could not: it reset todayDate to the real today on EVERY
+   render, which silently undid the day arrows on Today the instant they were
+   tapped. The arrows looked dead because every step was immediately
+   overwritten by the next paint. */
+let _lastKnownToday = todayCivil();
+
 function refreshTodayDate(){
-  /* The app can be left open across midnight. Without this, the timeline is
-     still drawing yesterday and the NOW line is off the bottom of it. */
+  /* The app can be left open across midnight. When that happens the person is
+     looking at a day that has just become yesterday, so carry them forward.
+     If they deliberately paged somewhere else, leave them where they are. */
   const real = todayCivil();
-  if(todayDate !== real && !_dragState){ todayDate = real; return true; }
+  if(real === _lastKnownToday) return false;
+  const wasOnToday = todayDate === _lastKnownToday;
+  _lastKnownToday = real;
+  if(wasOnToday && !_dragState){ todayDate = real; return true; }
   return false;
 }
 
@@ -4349,7 +4567,7 @@ function currentAndNext(civil, atMinute){
   return { current: current, next: next, all: list };
 }
 
-function renderFocus(civil){
+function renderFocus_unused(civil){
   const isToday = civil === todayCivil();
   if(!isToday){
     const load = workloadForDate(civil);
@@ -4438,8 +4656,7 @@ function renderToday(){
   const civil = todayDate;
   const tl = renderTimeline(civil, { id: 'todayTimeline', editable: false });
   el.innerHTML =
-    renderDayNav(civil, 'today') +
-    renderFocus(civil) +
+    renderHero(civil) +
     renderLoadNotice(civil) +
     tl.html;
   _timelineWindows.todayTimeline = tl.win;
@@ -4664,6 +4881,290 @@ function renderInbox(){
   el.innerHTML = parts.join('');
 }
 
+
+
+/* =========================================================
+   THE SLIDER CONTROL — one component, every time and duration
+   ---------------------------------------------------------
+   WHY IT EXISTS. `<input type="time">` renders on iOS as a small
+   pill sized to its own content, not to its container. In a
+   two-column field pair it sat half outside its box and overlapped
+   the day beside it; empty, it was an unlabelled dark lozenge with
+   no indication it was a time at all. It looked broken because, on
+   that platform, it was.
+
+   It is also the wrong control for the job. Choosing "quarter past
+   four" from a spinner is a menu; nudging a block later is a
+   gesture. This is the gesture.
+
+   ONE COMPONENT, USED EVERYWHERE a time or a duration is set —
+   quick capture, the full form, the allowed-time window, the day
+   start and end in Settings, and onboarding. That is what makes the
+   editing feel the same wherever you meet it.
+
+   The value lives in JS, not in the DOM. A range input's `value` is
+   a string that rounds, and reading it back is how a 4:15 becomes a
+   4:14. `ctlValue(id)` is the single source.
+
+   Native <input type="range"> on purpose: it is smooth, it is
+   keyboard- and VoiceOver-accessible, and iOS already knows that a
+   horizontal drag on it is not a page scroll. A hand-rolled
+   pointer slider would have to re-earn all three.
+   ========================================================= */
+const CTL = {};
+const CTL_KINDS = {
+  time:     { min: 0,  max: 1435, step: 5,  fmt: m => formatMinute(m) },
+  duration: { min: 15, max: 480,  step: 5,  fmt: m => formatDuration(m) }
+};
+
+function ctlInit(id, kind, value, opts){
+  const k = CTL_KINDS[kind] || CTL_KINDS.time;
+  const o = opts || {};
+  CTL[id] = {
+    kind: kind, value: value === null || value === undefined ? null : value,
+    min: o.min === undefined ? k.min : o.min,
+    max: o.max === undefined ? k.max : o.max,
+    step: k.step, label: o.label || '', hint: o.hint || '', onChange: o.onChange
+  };
+}
+function ctlValue(id){ return CTL[id] ? CTL[id].value : null; }
+function ctlSet(id, v){
+  const c = CTL[id];
+  if(!c) return;
+  if(v === null){ c.value = null; }
+  else {
+    let n = Math.round(v / c.step) * c.step;
+    c.value = Math.max(c.min, Math.min(c.max, n));
+  }
+  ctlPaint(id);
+}
+
+/* The whole control as markup. Rendered into a placeholder so the sheets keep
+   their structure in the static body, where the overlay engine can see it. */
+function ctlHtml(id){
+  const c = CTL[id];
+  if(!c) return '';
+  const k = CTL_KINDS[c.kind];
+  const v = c.value === null ? c.min : c.value;
+  const pct = ((v - c.min) / (c.max - c.min)) * 100;
+  return '<div class="ctl" id="' + escapeAttr(id) + '_ctl">' +
+    '<div class="ctl-head">' +
+      '<span class="ctl-label" id="' + escapeAttr(id) + '_lab">' + escapeHtml(c.label) + '</span>' +
+      '<span class="ctl-value" id="' + escapeAttr(id) + '_val">' +
+        escapeHtml(c.value === null ? '—' : k.fmt(c.value)) + '</span>' +
+    '</div>' +
+    '<div class="ctl-row">' +
+      '<button type="button" class="ctl-nudge" aria-label="' + escapeAttr('Earlier: ' + c.label) + '" ' +
+        'onclick="ctlNudge(\'' + escapeAttr(id) + '\',-1)">&minus;</button>' +
+      '<input type="range" class="ctl-range" id="' + escapeAttr(id) + '_rng" ' +
+        'min="' + c.min + '" max="' + c.max + '" step="' + c.step + '" value="' + v + '" ' +
+        'style="--pct:' + pct.toFixed(1) + '%" ' +
+        'aria-labelledby="' + escapeAttr(id) + '_lab" ' +
+        'aria-valuetext="' + escapeAttr(c.value === null ? 'not set' : k.fmt(c.value)) + '" ' +
+        'oninput="ctlInput(\'' + escapeAttr(id) + '\', this.value)">' +
+      '<button type="button" class="ctl-nudge" aria-label="' + escapeAttr('Later: ' + c.label) + '" ' +
+        'onclick="ctlNudge(\'' + escapeAttr(id) + '\',1)">+</button>' +
+    '</div>' +
+    (c.hint ? '<div class="ctl-hint">' + escapeHtml(c.hint) + '</div>' : '') +
+    '</div>';
+}
+
+function ctlInput(id, raw){
+  const c = CTL[id];
+  if(!c) return;
+  c.value = Math.max(c.min, Math.min(c.max, Math.round(Number(raw) / c.step) * c.step));
+  ctlPaint(id);
+  ctlChanged(c);
+}
+
+/* A control either belongs to a preference, which commits immediately, or to
+   a form, whose in-progress value belongs in the draft. One place decides. */
+function ctlChanged(c){
+  if(typeof c.onChange === "function"){ c.onChange(c.value); return; }
+  scheduleDraftSave();
+}
+function ctlNudge(id, dir){
+  const c = CTL[id];
+  if(!c) return;
+  ctlSet(id, (c.value === null ? c.min : c.value) + dir * c.step);
+  ctlChanged(c);
+}
+
+function ctlPaint(id){
+  const c = CTL[id];
+  if(!c) return;
+  const k = CTL_KINDS[c.kind];
+  const val = document.getElementById(id + '_val');
+  if(val) val.textContent = c.value === null ? '—' : k.fmt(c.value);
+  const rng = document.getElementById(id + '_rng');
+  if(rng){
+    const v = c.value === null ? c.min : c.value;
+    rng.value = String(v);
+    /* The filled half of the track is painted from the value rather than left
+       to the browser: only one engine implements a progress pseudo-element,
+       so a native fill would appear on some platforms and not others. */
+    const pct = ((v - c.min) / (c.max - c.min)) * 100;
+    if(rng.style && rng.style.setProperty) rng.style.setProperty('--pct', pct.toFixed(1) + '%');
+    rng.setAttribute('aria-valuetext', c.value === null ? 'not set' : k.fmt(c.value));
+  }
+}
+
+/* Mounts a control's markup into a placeholder that lives in the static body. */
+function ctlMount(hostId, id){
+  const host = document.getElementById(hostId);
+  if(host) host.innerHTML = ctlHtml(id);
+}
+
+/* The next quarter hour — what a new item means by "now-ish", and a far better
+   default than midnight, which is what an empty slider would otherwise show. */
+function nextQuarterHour(){
+  return Math.min(1425, Math.ceil(nowMinute() / 15) * 15);
+}
+
+/* =========================================================
+   THE SCHEDULE SWITCH
+   ---------------------------------------------------------
+   One toggle answering one question: does this have a time yet?
+   Off is the inbox, and the inbox is a real place — so the off
+   state is never dressed up as an incomplete form.
+   ========================================================= */
+function scheduleToggleHtml(id, on, label, hint){
+  return '<div class="sched-toggle">' +
+    '<span class="sched-copy"><span class="sched-title">' + escapeHtml(label) + '</span>' +
+    '<span class="sched-hint">' + escapeHtml(hint) + '</span></span>' +
+    '<button type="button" role="switch" class="switch' + (on ? ' is-on' : '') + '" ' +
+      'aria-checked="' + (on ? 'true' : 'false') + '" aria-label="' + escapeAttr(label) + '" ' +
+      'onclick="' + escapeAttr(id) + '()"><span class="switch-knob" aria-hidden="true"></span></button>' +
+    '</div>';
+}
+
+
+/* =========================================================
+   THE TODAY HERO
+   ---------------------------------------------------------
+   Today used to open with a date, a quiet line and a wall of
+   timeline. It answered the question correctly and looked like it
+   was answering nothing.
+
+   This is ONE composed surface — not more cards. It carries the
+   day, the way between days, and the answer to "what am I doing
+   now, and what comes next", with a single ambient wash behind it
+   so the top of the screen has somewhere to look.
+
+   The progress bar under the current item is elapsed time against
+   its own duration. It is derived from the clock, so it is true;
+   it is not a productivity score and there is deliberately nothing
+   like one anywhere in this product.
+   ========================================================= */
+function heroArrow(dir, target){
+  return '<button type="button" class="hero-arrow" ' +
+    'aria-label="' + (dir < 0 ? 'Previous day' : 'Next day') + '" ' +
+    'onclick="stepDay(\'' + target + '\',' + dir + ')">' +
+    (dir < 0 ? chevronLeft(20) : chevronRight(20)) + '</button>';
+}
+
+function renderHero(civil){
+  const isToday = civil === todayCivil();
+  const parts = [];
+
+  parts.push('<header class="hero">');
+  parts.push('<div class="hero-glow" aria-hidden="true"></div>');
+
+  parts.push('<div class="hero-nav">' +
+    heroArrow(-1, 'today') +
+    '<button type="button" class="hero-date" onclick="jumpToday(\'today\')">' +
+      '<span class="hero-rel">' + escapeHtml(relativeCivilLabel(civil)) + '</span>' +
+      '<span class="hero-full">' + escapeHtml(formatCivil(civil, 'long')) + '</span>' +
+    '</button>' +
+    heroArrow(1, 'today') +
+  '</div>');
+
+  if(!isToday){
+    /* Another day cannot have a "now". It gets what it does have. */
+    const load = workloadForDate(civil);
+    parts.push('<div class="hero-body hero-quiet">');
+    if(load.count){
+      parts.push('<span class="hero-kicker">Planned</span>');
+      parts.push('<h2 class="hero-title">' + load.count + (load.count === 1 ? ' thing' : ' things') + '</h2>');
+      parts.push('<p class="hero-meta">' + escapeHtml(formatDuration(load.fixedMinutes + load.flexMinutes)) +
+        ' scheduled' + (load.isOverloaded ? ' · ' + escapeHtml(formatDuration(load.overloadBy)) + ' will not fit' : '') + '</p>');
+    } else {
+      parts.push('<span class="hero-kicker">Open</span>');
+      parts.push('<h2 class="hero-title">Nothing planned</h2>');
+      parts.push('<p class="hero-meta">This day is still yours.</p>');
+    }
+    parts.push('</div></header>');
+    return parts.join('');
+  }
+
+  const m = nowMinute();
+  const cn = currentAndNext(civil, m);
+
+  if(cn.current){
+    const left = Math.max(0, Math.round(cn.current.visibleEnd - m));
+    const span = Math.max(1, cn.current.visibleEnd - cn.current.visibleStart);
+    const pct = Math.max(0, Math.min(100, ((m - cn.current.visibleStart) / span) * 100));
+    const ck = colorKeyOf({ tagId: cn.current.tagId });
+    parts.push('<div class="hero-body' + (ck ? ' ink-' + ck : '') + '">');
+    parts.push('<span class="hero-kicker">Now</span>');
+    parts.push('<h2 class="hero-title">' + escapeHtml(cn.current.title) + '</h2>');
+    parts.push('<p class="hero-meta">' + escapeHtml(formatDuration(left)) + ' left · until ' +
+      escapeHtml(formatMinute(cn.current.visibleEnd)) + '</p>');
+    parts.push('<div class="hero-prog" role="img" aria-label="' +
+      escapeAttr(Math.round(pct) + '% through this block') + '">' +
+      '<span style="width:' + pct.toFixed(1) + '%"></span></div>');
+    parts.push('<button type="button" class="hero-open" onclick="openOccurrence(\'' +
+      escapeAttr(cn.current.itemId) + '\',\'' + escapeAttr(civil) + '\')">Open</button>');
+    parts.push('</div>');
+  } else if(cn.next){
+    const ck = colorKeyOf({ tagId: cn.next.tagId });
+    parts.push('<div class="hero-body' + (ck ? ' ink-' + ck : '') + '">');
+    parts.push('<span class="hero-kicker">Next</span>');
+    parts.push('<h2 class="hero-title">' + escapeHtml(cn.next.title) + '</h2>');
+    parts.push('<p class="hero-meta">' + escapeHtml(formatGap(cn.next.visibleStart - m)) + ' · ' +
+      escapeHtml(formatMinute(cn.next.visibleStart)) + '</p>');
+    parts.push('<button type="button" class="hero-open" onclick="openOccurrence(\'' +
+      escapeAttr(cn.next.itemId) + '\',\'' + escapeAttr(civil) + '\')">Open</button>');
+    parts.push('</div>');
+  } else if(cn.all.length){
+    const done = cn.all.filter(o => o.status === 'done').length;
+    parts.push('<div class="hero-body hero-quiet">');
+    parts.push('<span class="hero-kicker">Rest of day</span>');
+    parts.push('<h2 class="hero-title">Nothing else scheduled</h2>');
+    parts.push('<p class="hero-meta">' + done + ' of ' + cn.all.length + ' done today</p>');
+    parts.push('</div>');
+  } else {
+    parts.push('<div class="hero-body hero-quiet">');
+    parts.push('<span class="hero-kicker">Today</span>');
+    parts.push('<h2 class="hero-title">' + (isFirstRun() ? 'Your day, on a timeline' : 'Nothing planned yet') + '</h2>');
+    parts.push('<p class="hero-meta">' + (isFirstRun()
+      ? 'Set when your day runs, then add the first thing.'
+      : 'Add the first thing and the rest builds around it.') + '</p>');
+    parts.push('<button type="button" class="hero-open" onclick="' +
+      (isFirstRun() ? 'startOnboarding(false)' : 'openQuickAdd(todayDate)') + '">' +
+      (isFirstRun() ? 'Set up my day' : 'Add something') + '</button>');
+    parts.push('</div>');
+  }
+
+  /* What follows the thing in the hero — the second half of the question.
+     Two at most: a third is a list, and the timeline below is the list. */
+  const upcoming = cn.all.filter(o => o.visibleStart > m).slice(0, 2);
+  if(upcoming.length && cn.current){
+    parts.push('<div class="hero-up">');
+    upcoming.forEach(o => {
+      const ck = colorKeyOf({ tagId: o.tagId });
+      parts.push('<button type="button" class="hero-up-row" onclick="openOccurrence(\'' +
+        escapeAttr(o.itemId) + '\',\'' + escapeAttr(civil) + '\')">' +
+        '<span class="hero-up-rail ' + (ck ? 'rail-' + ck : '') + '" aria-hidden="true"></span>' +
+        '<span class="hero-up-title">' + escapeHtml(o.title) + '</span>' +
+        '<span class="hero-up-time">' + escapeHtml(formatMinute(o.visibleStart)) + '</span></button>');
+    });
+    parts.push('</div>');
+  }
+
+  parts.push('</header>');
+  return parts.join('');
+}
 
 /* =========================================================
    DRAG — moving and resizing a block
@@ -5066,23 +5567,41 @@ function maybeOfferNext(itemId, date){
    inbox, which is a real place, not a failure state.
    ========================================================= */
 let quickAddDate = null;
+let quickScheduled = false;
 
 function openQuickAdd(civil){
   quickAddDate = isCivil(civil) ? civil : null;
   const title = document.getElementById('quickTitle');
-  const time = document.getElementById('quickTime');
   const err = document.getElementById('quickTitleError');
   if(title){ title.value = ''; title.classList.remove('field-error'); title.setAttribute('aria-invalid', 'false'); }
-  if(time) time.value = '';
   if(err) err.textContent = '';
-  const label = document.getElementById('quickWhen');
-  if(label){
-    label.textContent = quickAddDate
-      ? 'Optional. Without a time this goes to your inbox.'
-      : 'Optional. Add a time and it lands on today.';
-  }
+
+  /* Off by default: capture is one field. The same two controls the full form
+     uses appear the moment a time is wanted — the vocabulary is identical,
+     only the amount of it on screen differs. */
+  quickScheduled = false;
+  ctlInit('quickTime', 'time', nextQuarterHour(), { label: 'Starts' });
+  ctlInit('quickDur', 'duration', prefs.defaultDuration, { label: 'Takes' });
+  paintQuickSchedule();
   renderQuickTags();
   openOverlay('quickAddOverlay');
+}
+
+function toggleQuickSchedule(){
+  quickScheduled = !quickScheduled;
+  paintQuickSchedule();
+}
+
+function paintQuickSchedule(){
+  const t = document.getElementById('quickSchedToggle');
+  if(t){
+    t.innerHTML = scheduleToggleHtml('toggleQuickSchedule', quickScheduled, 'Give it a time',
+      quickScheduled
+        ? 'It lands on ' + relativeCivilLabel(quickAddDate || todayCivil()).toLowerCase() + '.'
+        : 'Without one it waits in your inbox.');
+  }
+  const f = document.getElementById('quickSchedFields');
+  if(f) f.innerHTML = quickScheduled ? ctlHtml('quickTime') + ctlHtml('quickDur') : '';
 }
 function closeQuickAdd(){ closeOverlay('quickAddOverlay'); }
 
@@ -5106,7 +5625,6 @@ function setQuickTag(id){
 
 function saveQuickAdd(){
   const titleEl = document.getElementById('quickTitle');
-  const timeEl = document.getElementById('quickTime');
   const errEl = document.getElementById('quickTitleError');
   const title = titleEl ? String(titleEl.value || '').trim() : '';
 
@@ -5116,14 +5634,10 @@ function saveQuickAdd(){
     if(errEl) errEl.textContent = 'Give it a name so you recognise it later.';
     return;
   }
-  const rawTime = timeEl ? String(timeEl.value || '').trim() : '';
-  const minute = rawTime ? parseTimeInput(rawTime) : null;
-  if(rawTime && minute === null){
-    if(errEl) errEl.textContent = 'That time was not understood. Try 9:30 or 21:00.';
-    return;
-  }
-
-  const date = minute === null ? null : (quickAddDate || todayCivil());
+  /* A slider cannot produce an unreadable time, so there is nothing to reject
+     here any more — the switch alone says whether this has one. */
+  const minute = quickScheduled ? ctlValue('quickTime') : null;
+  const date = quickScheduled ? (quickAddDate || todayCivil()) : null;
   const suggestion = suggestTagFor(title);
   const item = normalizeItem({
     kind: 'task',
@@ -5131,7 +5645,7 @@ function saveQuickAdd(){
     tagId: quickTagId || (suggestion ? suggestion.id : null),
     date: date,
     start: minute,
-    duration: prefs.defaultDuration,
+    duration: quickScheduled ? ctlValue('quickDur') : prefs.defaultDuration,
     reminders: minute !== null && prefs.defaultReminder >= 0 ? [prefs.defaultReminder] : []
   });
   if(!item) return;
@@ -5200,13 +5714,21 @@ function openItemForm(id, presetDate, presetStart){
   setValue('itemTitle', src.title || '');
   setValue('itemNote', src.notes || '');
   setValue('itemDate', src.date || presetDate || '');
-  setValue('itemTime', src.start !== undefined && src.start !== null ? formatMinute(src.start, true)
-    : (presetStart !== undefined && presetStart !== null ? formatMinute(presetStart, true) : ''));
-  setValue('itemDuration', String(src.duration || prefs.defaultDuration));
   setValue('itemDeadline', src.deadline || '');
-  setValue('itemEarliest', src.earliest !== undefined && src.earliest !== null ? formatMinute(src.earliest, true) : '');
-  setValue('itemLatest', src.latest !== undefined && src.latest !== null ? formatMinute(src.latest, true) : '');
   setFormPriority(src.priority || 1, true);
+
+  const startVal = src.start !== undefined && src.start !== null ? src.start
+    : (presetStart !== undefined && presetStart !== null ? presetStart : null);
+  formScheduled = !!(src.date || presetDate) && startVal !== null;
+  ctlInit('itemTime', 'time', startVal === null ? nextQuarterHour() : startVal, { label: 'Starts' });
+  ctlInit('itemDur', 'duration', src.duration || prefs.defaultDuration, { label: 'Takes' });
+  formWindowed = (src.earliest !== undefined && src.earliest !== null) ||
+                 (src.latest !== undefined && src.latest !== null);
+  ctlInit('itemEarliest', 'time', src.earliest === undefined || src.earliest === null ? prefs.dayStart : src.earliest,
+    { label: 'Not before' });
+  ctlInit('itemLatest', 'time', src.latest === undefined || src.latest === null ? prefs.dayEnd : src.latest,
+    { label: 'Finished by' });
+  paintFormSchedule();
 
   const err = document.getElementById('itemTitleError');
   if(err) err.textContent = '';
@@ -5228,6 +5750,36 @@ function openItemForm(id, presetDate, presetStart){
 function closeItemForm(){
   closeOverlay('itemFormOverlay');
   editingItemId = null;
+}
+
+let formScheduled = false;
+let formWindowed = false;
+
+function toggleFormSchedule(){ formScheduled = !formScheduled; paintFormSchedule(); scheduleDraftSave(); }
+function toggleFormWindow(){ formWindowed = !formWindowed; paintFormSchedule(); scheduleDraftSave(); }
+
+/* Both disclosures and both controls repaint together, so the form can never
+   show a time for something it is about to save without one. */
+function paintFormSchedule(){
+  const t = document.getElementById('itemSchedToggle');
+  if(t){
+    t.innerHTML = scheduleToggleHtml('toggleFormSchedule', formScheduled, 'Put it on a day',
+      formScheduled ? 'It appears on your timeline.' : 'Without a day it waits in your inbox.');
+  }
+  const f = document.getElementById('itemSchedFields');
+  if(f) f.style.display = formScheduled ? '' : 'none';
+  const th = document.getElementById('itemTimeHost');
+  if(th) th.innerHTML = ctlHtml('itemTime');
+  const dh = document.getElementById('itemDurHost');
+  if(dh) dh.innerHTML = ctlHtml('itemDur');
+
+  const wt = document.getElementById('itemWindowToggle');
+  if(wt){
+    wt.innerHTML = scheduleToggleHtml('toggleFormWindow', formWindowed, 'Limit when it can happen',
+      'Auto Plan keeps it inside these hours.');
+  }
+  const wf = document.getElementById('itemWindowFields');
+  if(wf) wf.innerHTML = formWindowed ? ctlHtml('itemEarliest') + ctlHtml('itemLatest') : '';
 }
 
 function setValue(id, v){ const el = document.getElementById(id); if(el) el.value = v; }
@@ -5342,21 +5894,19 @@ function saveItemForm(){
   if(errEl) errEl.textContent = '';
 
   const rawDate = getValue('itemDate');
-  const rawTime = getValue('itemTime');
-  const date = isCivil(rawDate) ? rawDate : null;
-  const start = rawTime ? parseTimeInput(rawTime) : null;
+  const date = formScheduled && isCivil(rawDate) ? rawDate : null;
+  const start = formScheduled ? ctlValue('itemTime') : null;
 
-  if(rawTime && start === null){
-    if(errEl) errEl.textContent = 'That start time was not understood. Try 9:30 or 21:00.';
+  /* The switch says this belongs on a day; the day field says which. Saving it
+     onto today because the person forgot to pick one would be inventing a
+     commitment they never made. */
+  if(formScheduled && !date){
+    if(errEl) errEl.textContent = 'Pick a day as well, or turn off “Put it on a day” to keep this in your inbox.';
     return;
   }
-  if(start !== null && !date){
-    if(errEl) errEl.textContent = 'Pick a day as well, or clear the time to keep this in your inbox.';
-    return;
-  }
-  const duration = Math.max(SNAP_MINUTES, Math.min(MAX_DURATION, parseInt(getValue('itemDuration'), 10) || prefs.defaultDuration));
-  const earliest = getValue('itemEarliest') ? parseTimeInput(getValue('itemEarliest')) : null;
-  const latest = getValue('itemLatest') ? parseTimeInput(getValue('itemLatest')) : null;
+  const duration = ctlValue('itemDur') || prefs.defaultDuration;
+  const earliest = formWindowed ? ctlValue('itemEarliest') : null;
+  const latest = formWindowed ? ctlValue('itemLatest') : null;
   const deadline = isCivil(getValue('itemDeadline')) ? getValue('itemDeadline') : null;
 
   const existing = editingItemId ? itemById(editingItemId) : null;
@@ -5420,9 +5970,11 @@ function flushDraft(){
   if(!title && !note){ Store.remove(KEYS.itemDraft); return; }
   Store.setJSON(KEYS.itemDraft, {
     kind: formKind, title: title, notes: note, tagId: formTagId,
-    date: getValue('itemDate') || null,
-    start: getValue('itemTime') ? parseTimeInput(getValue('itemTime')) : null,
-    duration: parseInt(getValue('itemDuration'), 10) || prefs.defaultDuration,
+    date: formScheduled ? (getValue('itemDate') || null) : null,
+    start: formScheduled ? ctlValue('itemTime') : null,
+    duration: ctlValue('itemDur') || prefs.defaultDuration,
+    earliest: formWindowed ? ctlValue('itemEarliest') : null,
+    latest: formWindowed ? ctlValue('itemLatest') : null,
     recurrence: formRepeat, reminders: formReminders
   });
 }
@@ -6066,12 +6618,12 @@ function renderSettings(){
     '</div>');
 
   parts.push('<div class="section-label">Your day</div>');
-  parts.push('<div class="setting-row"><label for="setDayStart">Day starts</label>' +
-    '<input type="time" id="setDayStart" value="' + escapeAttr(formatMinute(prefs.dayStart, true)) +
-    '" onchange="setPref(\'dayStart\', this.value)"></div>');
-  parts.push('<div class="setting-row"><label for="setDayEnd">Day ends</label>' +
-    '<input type="time" id="setDayEnd" value="' + escapeAttr(formatMinute(prefs.dayEnd, true)) +
-    '" onchange="setPref(\'dayEnd\', this.value)"></div>');
+  /* The same slider the forms use. A preference that sets a time and a form
+     that sets a time should not be two different experiences. */
+  ctlInit('setDayStart', 'time', prefs.dayStart, { label: 'Day starts', onChange: v => setPrefMinute('dayStart', v) });
+  ctlInit('setDayEnd', 'time', prefs.dayEnd, { label: 'Day ends', onChange: v => setPrefMinute('dayEnd', v) });
+  parts.push(ctlHtml('setDayStart'));
+  parts.push(ctlHtml('setDayEnd'));
   parts.push('<div class="setting-row"><label for="setDuration">Default length</label>' +
     '<input type="number" id="setDuration" min="15" max="480" step="5" value="' + prefs.defaultDuration +
     '" onchange="setPref(\'defaultDuration\', this.value)"></div>');
@@ -6137,6 +6689,22 @@ function toggleMarkup(key, on){
   return '<button type="button" role="switch" class="switch' + (on ? ' is-on' : '') + '" ' +
     'aria-checked="' + (on ? 'true' : 'false') + '" ' +
     'onclick="togglePref(\'' + key + '\')"><span class="switch-knob" aria-hidden="true"></span></button>';
+}
+
+/* Committed straight from the slider, so dragging the day's end past its start
+   is corrected as it happens rather than rejected after the fact. */
+function setPrefMinute(key, minutes){
+  const next = Object.assign({}, prefs);
+  next[key] = minutes;
+  if(next.dayEnd <= next.dayStart){
+    if(key === 'dayStart') next.dayEnd = Math.min(MIN_PER_DAY - 5, next.dayStart + 60);
+    else next.dayStart = Math.max(0, next.dayEnd - 60);
+  }
+  prefs = normalizePrefs(next);
+  if(!persistPrefs()) toast('That could not be saved on this device.', 'error');
+  ctlSet('setDayStart', prefs.dayStart);
+  ctlSet('setDayEnd', prefs.dayEnd);
+  renderToday(); renderPlan();
 }
 
 function setPref(key, value){
@@ -6223,10 +6791,10 @@ function renderOnboarding(){
     parts.push('<div class="ob-art" aria-hidden="true">' + clockIcon(30) + '</div>');
     parts.push('<h2 class="ob-title">When does your day run?</h2>');
     parts.push('<p class="ob-body">Your timeline starts and ends here. You can change it any time in Settings.</p>');
-    parts.push('<div class="setting-row"><label for="obStart">Starts</label>' +
-      '<input type="time" id="obStart" value="' + escapeAttr(formatMinute(prefs.dayStart, true)) + '"></div>');
-    parts.push('<div class="setting-row"><label for="obEnd">Ends</label>' +
-      '<input type="time" id="obEnd" value="' + escapeAttr(formatMinute(prefs.dayEnd, true)) + '"></div>');
+    ctlInit('obStart', 'time', prefs.dayStart, { label: 'Starts' });
+    ctlInit('obEnd', 'time', prefs.dayEnd, { label: 'Ends' });
+    parts.push(ctlHtml('obStart'));
+    parts.push(ctlHtml('obEnd'));
     if(next) next.textContent = 'Continue';
   } else if(onboardStep === 1){
     parts.push('<div class="ob-art" aria-hidden="true">' + calendarIcon(30) + '</div>');
@@ -6243,8 +6811,9 @@ function renderOnboarding(){
       'and it waits in your inbox until you place it.</p>');
     parts.push('<div class="field"><label for="obTitle">What is it?</label>' +
       '<input type="text" id="obTitle" maxlength="120" placeholder="Something you are doing today" autocomplete="off"></div>');
-    parts.push('<div class="field"><label for="obTime">At what time?</label>' +
-      '<input type="time" id="obTime"><div class="field-hint">Optional.</div></div>');
+    ctlInit('obTime', 'time', nextQuarterHour(), { label: 'At what time' });
+    parts.push(ctlHtml('obTime'));
+    parts.push('<p class="field-hint">Slide to set a time, or skip it and this waits in your inbox.</p>');
     if(next) next.textContent = 'Finish';
   }
   el.innerHTML = parts.join('');
@@ -6252,8 +6821,7 @@ function renderOnboarding(){
 
 function onboardNext(){
   if(onboardStep === 0){
-    const s = document.getElementById('obStart'), e = document.getElementById('obEnd');
-    const sm = s ? parseTimeInput(s.value) : null, em = e ? parseTimeInput(e.value) : null;
+    const sm = ctlValue('obStart'), em = ctlValue('obEnd');
     if(sm !== null && em !== null && em > sm){
       prefs = normalizePrefs(Object.assign({}, prefs, { dayStart: sm, dayEnd: em }));
       persistPrefs();
@@ -6266,10 +6834,9 @@ function onboardNext(){
   if(onboardStep === 1){ onboardStep = 2; renderOnboarding(); return; }
 
   const t = document.getElementById('obTitle');
-  const tm = document.getElementById('obTime');
   const title = t ? String(t.value || '').trim() : '';
   if(title){
-    const minute = tm && tm.value ? parseTimeInput(tm.value) : null;
+    const minute = ctlValue('obTime');
     const item = normalizeItem({
       kind: 'task', title: title,
       date: minute === null ? null : todayCivil(),
@@ -6327,7 +6894,7 @@ Domain.wire = function(){
 
   /* Draft capture on the full form. Bound once, at boot, to fields that exist
      in the static markup. */
-  ['itemTitle', 'itemNote', 'itemDate', 'itemTime', 'itemDuration'].forEach(id => {
+  ['itemTitle', 'itemNote', 'itemDate', 'itemDeadline'].forEach(id => {
     const el = document.getElementById(id);
     if(el && el.addEventListener) el.addEventListener('input', scheduleDraftSave);
   });

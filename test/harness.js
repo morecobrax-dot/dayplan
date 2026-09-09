@@ -339,10 +339,11 @@ const BRIDGE = [
   '_historyDepth', '_pendingSelfPops', '_confirmResolve',
   /* product state */
   'items', 'overrides', 'tags', 'prefs', 'currentTheme',
-  'todayDate', 'planDate', 'planMode', 'inboxFilter',
+  'todayDate', 'planDate', 'planMode', 'inboxFilter', '_lastKnownToday',
   'editingItemId', 'detailItemId', 'detailDate', 'editingTagId', 'schedulingItemId',
   'formStatus', 'formKind', 'formTagId', 'formRepeat', 'formReminders', 'formPriority',
   'quickTagId', 'quickAddDate', 'onboardStep',
+  'formScheduled', 'formWindowed', 'quickScheduled', 'CTL', 'CTL_KINDS',
   '_timelineWindows', '_dragState', '_dragArm', '_firedReminders', '_proposal',
   '_repeatDraft', '_nowTimer', '_edgeTimer', '_hour12Cache',
   /* product constants */

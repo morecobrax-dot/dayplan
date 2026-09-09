@@ -537,26 +537,39 @@ function testForms(){
     d.getElementById('itemTitleError').textContent.length > 10);
   T('the form stays open', d.getElementById('itemFormOverlay').classList.contains('open'));
 
-  sub('a start time with no day is refused, not guessed');
+  sub('a scheduled item with no day is refused, not guessed');
   /* Defaulting to today here would put a commitment on a day the person never
      named, which is the class of bug that makes someone miss something. */
   d.getElementById('itemTitle').value = 'Untethered';
-  d.getElementById('itemTime').value = '09:00';
+  c.toggleFormSchedule();
+  T('the switch is on', c.formScheduled === true);
+  c.ctlSet('itemTime', 540);
   d.getElementById('itemDate').value = '';
   c.saveItemForm();
   T('nothing was created', c.items.length === 0);
   T('and the message names the fix',
     /day/i.test(d.getElementById('itemTitleError').textContent));
 
-  sub('an unreadable time is refused rather than rounded');
-  d.getElementById('itemDate').value = '2026-09-08';
-  d.getElementById('itemTime').value = 'half nine';
-  c.saveItemForm();
-  T('still nothing created', c.items.length === 0);
+  sub('the slider cannot produce a time that is not a time');
+  /* The control this replaced was a text field, and half its validation
+     existed to reject what someone might type into it. A slider is bounded by
+     construction: there is no unparseable value to defend against. */
+  c.ctlSet('itemTime', 99999);
+  T('past the end of the day clamps to the last slot', c.ctlValue('itemTime') === 1435,
+    String(c.ctlValue('itemTime')));
+  c.ctlSet('itemTime', -600);
+  T('before the start of it clamps to midnight', c.ctlValue('itemTime') === 0);
+  c.ctlSet('itemTime', 543);
+  T('and every value lands on the 5-minute step', c.ctlValue('itemTime') % 5 === 0,
+    String(c.ctlValue('itemTime')));
+  c.ctlSet('itemDur', 3);
+  T('a duration cannot go below the minimum block', c.ctlValue('itemDur') === 15,
+    String(c.ctlValue('itemDur')));
 
   sub('creating');
-  d.getElementById('itemTime').value = '09:00';
-  d.getElementById('itemDuration').value = '45';
+  d.getElementById('itemDate').value = '2026-09-08';
+  c.ctlSet('itemTime', 540);
+  c.ctlSet('itemDur', 45);
   c.setFormKind('event');
   c.saveItemForm(); c.__flush();
   T('the record exists', c.items.length === 1);
@@ -577,6 +590,8 @@ function testForms(){
   c.openItemForm(id); c.__flush();
   T('the form is pre-filled', d.getElementById('itemTitle').value === 'Untethered');
   T('including its day', d.getElementById('itemDate').value === '2026-09-08');
+  T('and its time, on the slider', c.ctlValue('itemTime') === 540, String(c.ctlValue('itemTime')));
+  T('with the schedule switch already on', c.formScheduled === true);
   d.getElementById('itemTitle').value = 'Renamed';
   c.setFormKind('task');
   c.saveItemForm(); c.__flush();
@@ -604,8 +619,7 @@ function testForms(){
 
   sub('saving clears the draft');
   d.getElementById('itemTitle').value = 'Second thing';
-  d.getElementById('itemDate').value = '';
-  d.getElementById('itemTime').value = '';
+  if(c.formScheduled) c.toggleFormSchedule();
   c.saveItemForm(); c.__flush();
   T('the draft is gone', c.Store.get(c.KEYS.itemDraft) === null);
   T('the record was created', c.items.length === 2);
@@ -1453,6 +1467,16 @@ function testTimeline(){
   T('a flexible task overlapping is not a clash — Auto Plan can solve it',
     c.detectConflicts(c.occurrencesForDate('2026-09-08')).length === 0);
 
+  sub('Today opens on a hero that can page between days');
+  T('the hero is what Today renders', /el\.innerHTML =\s*\n\s*renderHero\(civil\)/.test(js()));
+  T('its arrows call the day stepper', /function heroArrow\([\s\S]{0,300}stepDay\(/.test(js()));
+  T('they are full touch targets',
+    /\.hero-arrow\{[\s\S]{0,220}width: var\(--touch-min\)/.test(css()));
+  T('the progress bar is elapsed time, not a score',
+    /\(m - cn\.current\.visibleStart\) \/ span/.test(js()));
+  T('and nothing in the product invents one',
+    !/productivity|streak|score/i.test(stripComments(js())));
+
   sub('the clock line follows the clock and nothing else');
   const src = js();
   T('it is positioned from the real time',
@@ -1462,7 +1486,44 @@ function testTimeline(){
   T('and it is only drawn on today',
     /function renderNowRail\([\s\S]{0,160}civil !== todayCivil\(\)\) return ''/.test(src));
   T('the app notices the day rolling over while it is open',
-    /function refreshTodayDate\(\)\{[\s\S]{0,220}todayDate !== real/.test(src));
+    /function refreshTodayDate\(\)\{[\s\S]{0,320}real === _lastKnownToday/.test(src));
+
+  sub('the day arrows actually change the day');
+  /* THE DEFECT THIS PREVENTS, reported from a real iPhone: Today's arrows did
+     nothing. stepDay() moved the date correctly and then renderAll() called
+     refreshTodayDate(), which reset it to the real today on every render — so
+     every step was undone by the paint that followed it. The guard now fires
+     only when the CLOCK has crossed midnight, not on every render. */
+  {
+    const a2 = H.loadApp();
+    const c2 = a2.ctx;
+    const start = c2.todayDate;
+    c2.stepDay('today', -1);
+    T('back goes back a day', c2.todayDate === c2.addDays(start, -1), c2.todayDate);
+    c2.stepDay('today', 1); c2.stepDay('today', 1);
+    T('forward goes forward', c2.todayDate === c2.addDays(start, 1), c2.todayDate);
+    T('and a render does not undo it', (() => { c2.renderAll(); return c2.todayDate === c2.addDays(start, 1); })(),
+      c2.todayDate);
+    T('jumping back to today works', (() => { c2.jumpToday('today'); return c2.todayDate === c2.todayCivil(); })());
+
+    /* Plan pages independently — stepping one must never move the other. */
+    const planStart = c2.planDate;
+    c2.stepDay('plan', 3);
+    T('Plan pages on its own date', c2.planDate === c2.addDays(planStart, 3));
+    T('and Today is unaffected by it', c2.todayDate === c2.todayCivil());
+
+    sub('midnight carries the viewer forward only if they were on today');
+    /* Simulated by moving the remembered day back, which is what a clock
+       crossing midnight looks like from inside refreshTodayDate(). */
+    c2._lastKnownToday = c2.addDays(c2.todayCivil(), -1);
+    c2.todayDate = c2.addDays(c2.todayCivil(), -1);
+    T('someone left on yesterday is moved to the new today',
+      (() => { c2.refreshTodayDate(); return c2.todayDate === c2.todayCivil(); })(), c2.todayDate);
+    c2._lastKnownToday = c2.addDays(c2.todayCivil(), -1);
+    c2.todayDate = c2.addDays(c2.todayCivil(), 4);
+    T('someone who paged away is left exactly where they were',
+      (() => { c2.refreshTodayDate(); return c2.todayDate === c2.addDays(c2.todayCivil(), 4); })(), c2.todayDate);
+  }
 }
 
 /* =========================================================
@@ -1722,7 +1783,7 @@ function testAutoPlan(){
   T('no invented score is exposed',
     load.score === undefined && load.percent === undefined && load.rating === undefined);
   T('the wording on screen is minutes, not a percentage',
-    /will not fit/.test(js()) && !/productivity score/i.test(js()));
+    /will not fit/.test(js()) && !/productivity score/i.test(stripComments(js())));
 }
 
 /* =========================================================
@@ -2021,7 +2082,11 @@ function testTheme(){
       ['--text', '--surface'], ['--text-dim', '--surface'], ['--text-faint', '--surface'],
       ['--accent', '--bg'], ['--now-line', '--bg'],
       ['--success', '--surface'], ['--warning', '--surface'], ['--danger', '--surface'],
-      ['--accent-contrast', '--accent']
+      /* The accent has two stops for a reason: --accent is bright enough to be
+         READ on the ground, --accent-fill is dark enough to carry white. Text
+         never sits on --accent, so checking that pair would be measuring a
+         combination the product does not draw. */
+      ['--accent-contrast', '--accent-fill'], ['--accent-contrast', '--accent-deep']
     ];
     [['dark', darkMap], ['light', lightMap]].forEach(entry => {
       const label = entry[0], map = entry[1];
@@ -2046,11 +2111,68 @@ function testTheme(){
     });
   }
 
+  sub('one control sets every time and every duration');
+  /* THE DEFECT THIS PREVENTS, seen on a real iPhone: <input type="time">
+     renders there as a small pill sized to its own content rather than its
+     container. In a two-column pair it sat half outside its box and overlapped
+     the day field beside it; empty, it was an unlabelled lozenge. Every time
+     and duration in the product now goes through one slider, so there is one
+     thing to get right and one place it can regress. */
+  /* The markup only: <body> contains the script too, and the comment above
+     the control quotes the very tag this forbids. */
+  const markupOnly = H.bodyBlock(H.readApp()).split('<script>')[0];
+  T('no native time input is left in the markup',
+    !/<input[^>]*type="time"/.test(markupOnly),
+    (markupOnly.match(/<input[^>]*type="time"[^>]*>/g) || []).slice(0, 2).join(' | '));
+  T('the control is a native range, which already knows a drag from a scroll',
+    /<input type="range" class="ctl-range"/.test(js()));
+  T('and it lets the page keep vertical scrolling',
+    /\.ctl-range\{[\s\S]{0,400}touch-action: pan-y/.test(css()));
+  T('its value lives in JS, not in the input',
+    /function ctlValue\(id\)\{ return CTL\[id\] \? CTL\[id\]\.value : null; \}/.test(js()));
+  T('the same component serves both kinds', /const CTL_KINDS = \{/.test(js()));
+  {
+    const a3 = H.loadApp();
+    const c3 = a3.ctx;
+    ['quickTime', 'itemTime', 'itemEarliest', 'itemLatest', 'setDayStart', 'setDayEnd', 'obStart', 'obEnd']
+      .forEach(id => T('“' + id + '” is a slider', new RegExp("ctlInit\\('" + id + "'").test(js())));
+    ['quickDur', 'itemDur'].forEach(id =>
+      T('“' + id + '” is a slider', new RegExp("ctlInit\\('" + id + "'").test(js())));
+    c3.ctlInit('probe', 'time', 600, { label: 'Probe' });
+    const html = c3.ctlHtml('probe');
+    T('it renders a labelled range', /type="range"/.test(html) && /aria-labelledby/.test(html));
+    T('with a spoken value, not just a number', /aria-valuetext/.test(html));
+    T('and nudge buttons at the touch minimum',
+      /class="ctl-nudge"/.test(html) && /\.ctl-nudge\{[\s\S]{0,200}width: var\(--touch-min\)/.test(css()));
+  }
+
   sub('a block never relies on colour alone');
   T('it carries an icon as well as a rail', /class="blk-icon"/.test(js()));
   T('and its title in text', /class="blk-title"/.test(js()));
   T('a completed block is marked, not merely faded',
     /\.blk-done \.blk-title\{ text-decoration: line-through/.test(style));
+
+  sub('no colour is defined in only one palette');
+  /* THE DEFECT THIS PREVENTS: --rail-line was written as a literal dark rgba
+     and never restated for light, so the timeline's hour lines rendered in the
+     dark theme's colour on paper. A token that exists in one palette and not
+     the other is the classic half-themed bug, and eyeballing one screen will
+     not find it — every such token is enumerated here instead. */
+  {
+    const rootBlock = dark, lightBlock = light;
+    const literal = /^\s*(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{3,8}|rgba?\()/;
+    const darkOnly = [];
+    rootBlock.split('\n').forEach(line => {
+      const m = literal.exec(line);
+      if(!m) return;
+      const name = m[1];
+      /* The scale is deliberately palette-independent: type, space, radius,
+         motion and layout do not change with appearance. */
+      if(/^--(fs|space|radius|dur|bp|lh|inset|touch|input|layout|tabbar|font)/.test(name)) return;
+      if(lightBlock.indexOf(name + ':') === -1) darkOnly.push(name);
+    });
+    T('every colour token is restated for light', darkOnly.length === 0, darkOnly.join(', '));
+  }
 
   sub('the scale does not change with the palette');
   T('no type token is redefined in the light block',
