@@ -53,7 +53,13 @@ const SUITES = [
   C.testReminders,
   C.testExport,
   C.testTags,
-  C.testTheme
+  C.testTheme,
+  C.testContext,
+  C.testExitPolicy,
+  C.testSettings,
+  C.testLegacyDrafts,
+  C.testSwipeOwnership,
+  C.testBackAndMarker
 ];
 
 async function main(){

@@ -281,8 +281,13 @@ function buildDom(src){
     const clsM = attrText.match(/\bclass="([^"]+)"/);
     const onM = attrText.match(/\bonclick="([^"]+)"/);
     const roleM = attrText.match(/\brole="([^"]+)"/);
+    /* A surface declares that it can be swiped with this attribute. Without
+       it here, no gesture can start under test and the behaviour could only
+       ever be asserted by reading the source. */
+    const swipeM = attrText.match(/\bdata-swipe="([^"]+)"/);
     found.push({ tag, id: idM ? idM[1] : null, cls: clsM ? clsM[1] : '',
-                 onclick: onM ? onM[1] : null, role: roleM ? roleM[1] : null, at: m.index });
+                 onclick: onM ? onM[1] : null, role: roleM ? roleM[1] : null,
+                 swipe: swipeM ? swipeM[1] : null, at: m.index });
   }
   /* Nearest preceding element with an id and a container class becomes scope. */
   const containers = found.filter(f => f.id && /overlay|view|list|segmented|tabbar|host|panel|grid/.test(f.cls + ' ' + f.id));
@@ -294,6 +299,7 @@ function buildDom(src){
        path out of this attribute rather than inventing one. */
     if(f.onclick) el.setAttribute('onclick', f.onclick);
     if(f.role) el.setAttribute('role', f.role);
+    if(f.swipe) el.setAttribute('data-swipe', f.swipe);
     const owner = containers.filter(c => c.at < f.at && c.id !== f.id).pop();
     el._scope = owner ? owner.id : null;
     byId.set(f.id, el);
@@ -343,8 +349,8 @@ const BRIDGE = [
   'editingItemId', 'detailItemId', 'detailDate', 'editingTagId', 'schedulingItemId',
   'formStatus', 'formKind', 'formTagId', 'formRepeat', 'formReminders', 'formPriority',
   'quickTagId', 'quickAddDate', 'onboardStep',
-  'formScheduled', 'formWindowed', 'quickScheduled', 'CTL', 'CTL_KINDS',
-  '_timelineWindows', '_dragState', '_dragArm', '_firedReminders', '_proposal',
+  'formScheduled', 'formWindowed', 'quickScheduled', 'Form', '_draftTimer', 'formView', 'FORM_FIELDS', 'CTL', 'CTL_KINDS',
+  '_timelineWindows', '_ctxKey', 'CONTEXT_SOON', '_dragState', '_swipe', '_settling', '_pageSession', '_pageHistoryAt', '_formBaseline', 'SWIPE_EDGE_GUARD', 'SWIPE_CLAIM_PX', 'SWIPE_COMPLETE', 'SWIPE_FLICK_MIN', 'SWIPE_VELOCITY', '_dragArm', '_firedReminders', '_proposal',
   '_repeatDraft', '_nowTimer', '_edgeTimer', '_hour12Cache',
   /* product constants */
   'ITEM_KINDS', 'ITEM_STATUSES', 'STATUS_LABEL', 'PRIORITIES', 'PRIORITY_LABEL',

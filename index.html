@@ -8,7 +8,7 @@
 <title>Dayplan</title>
 <meta name="description" content="Plan your day on a timeline you can move.">
 <meta name="apple-mobile-web-app-title" content="Dayplan">
-<meta name="theme-color" content="#0B0F16">
+<meta name="theme-color" content="#101010">
 <!-- APP-META-END -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -41,34 +41,43 @@
   --font-display: var(--font-ui);
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  /* INDIGO NIGHT. The ground is a deep blue, not a neutral charcoal —
-     that single change is most of what separates this product from the
-     foundation it was built on.
+  /* NEAR-BLACK AND ORANGE. Neutral charcoal surfaces carry the product;
+     one orange carries emphasis. The ground is grey, not tinted, so the
+     orange is the only chromatic thing on screen and does not have to
+     compete with a coloured background to be noticed.
 
-     Three accent stops rather than two, because one value cannot do both
-     jobs: --accent is bright enough to be READ as text on the ground,
-     --accent-fill is dark enough to carry WHITE text on a button, and
-     --accent-deep closes the gradient. A two-stop ramp forces a choice
-     between unreadable labels and unreadable buttons. */
-  --brand-accent: #8E7CFF;
-  --brand-accent-fill: #6E5CF0;
-  --brand-accent-deep: #4F3FD6;
+     THE ORANGE IS #F25623 EXACTLY, and its label is near-black. Dark text
+     on that fill measures 5.23:1; white measures 3.43:1 and fails. Every
+     orange surface in this product therefore carries dark text, and the
+     ramp BRIGHTENS rather than darkens — --accent-hi is a lighter orange,
+     not a deeper one, because a deeper orange drops the dark label below
+     the floor. A ramp named "deep" here would be a ramp that fails.
+
+     Three stops, because one value cannot do two jobs: --accent is read
+     as text, --accent-fill is the exact anchor used for fills, and
+     --accent-hi opens the gradient. */
+  --brand-accent: #FF7043;
+  --brand-accent-fill: #F25623;
+  --brand-accent-hi: #FF7A4D;
 
   /* The ground and the surfaces that sit on it. These are literal values,
      not computed from --brand-ground, because the steps between them were
      chosen for contrast rather than for arithmetic. Retheming means editing
      this ramp — five values, all here. Changing only the ground and leaving
      the ramp behind is what makes a rebrand look half-finished. */
-  --brand-ground: #0A0F1D;
-  --brand-surface: #141B2E;
-  --brand-surface-raised: #1E2740;
-  --brand-surface-sunken: #060A14;
-  --brand-border: #2B3654;
+  /* Neutral greys. #191919 is the reference's near-black; the ground sits
+     one step under it so a surface reads as raised without a border, and
+     the borders can then stay restrained. */
+  --brand-ground: #101010;
+  --brand-surface: #191919;
+  --brand-surface-raised: #232323;
+  --brand-surface-sunken: #0A0A0A;
+  --brand-border: #2F2F2F;
 
-  /* The ambient wash behind the Today hero. Depth belongs to ONE surface;
-     spread over the whole app it stops reading as light and starts reading
-     as a gradient someone left on. */
-  --brand-glow: radial-gradient(120% 90% at 50% -20%, rgba(110,92,240,0.34) 0%, rgba(110,92,240,0.10) 42%, rgba(10,15,29,0) 74%);
+  /* A short warm wash at the very top of Today, and nowhere else. Kept far
+     below the strength of the accent: this is a hint of light on a grey
+     surface, not an orange gradient covering the screen. */
+  --brand-glow: radial-gradient(130% 80% at 50% -28%, rgba(242,86,35,0.15) 0%, rgba(242,86,35,0.04) 44%, rgba(16,16,16,0) 74%);
 
   /* ---- 2 · SEMANTIC --------------------------------------------
      Roles, not colours. Components only ever reference these, so a
@@ -78,32 +87,36 @@
   --surface-raised: var(--brand-surface-raised);
   --surface-sunken: var(--brand-surface-sunken);
   --border: var(--brand-border);
-  --border-quiet: rgba(43,54,84,0.62);
-  --edge-hi: rgba(226,232,248,0.06);
+  --border-quiet: rgba(47,47,47,0.72);
+  --edge-hi: rgba(255,255,255,0.05);
   --glow: var(--brand-glow);
 
-  --text: #E8ECF8;
-  --text-dim: #9BA7C6;
+  --text: #F2F2F0;
+  --text-dim: #A6A6A2;
   /* Measured on --surface. Recessive to --text-dim, still readable at the
      micro sizes the hour rail uses. */
-  --text-faint: #79859F;
+  --text-faint: #84847D;
 
   --accent: var(--brand-accent);
   --accent-fill: var(--brand-accent-fill);
-  --accent-deep: var(--brand-accent-deep);
-  --accent-soft: rgba(142,124,255,0.15);
-  /* Text drawn ON a filled accent surface — never on --accent, which is the
-     bright reading stop. */
-  --accent-contrast: #FFFFFF;
+  --accent-hi: var(--brand-accent-hi);
+  --accent-soft: rgba(242,86,35,0.16);
+  /* Near-black, on every orange surface, in both themes. */
+  --accent-contrast: #171717;
 
-  --success: #52B98C;
-  --success-soft: rgba(82,185,140,0.13);
-  --warning: #D3A45E;
-  --warning-soft: rgba(211,164,94,0.13);
-  --danger: #F0736A;
-  --danger-soft: rgba(240,115,106,0.13);
+  /* Status hues stay away from the brand orange so a warning is never read
+     as a button. They are also never the only signal: a notice carries an
+     icon and a sentence, a badge carries an uppercase word. */
+  --success: #45BE8B;
+  --success-soft: rgba(69,190,139,0.14);
+  --warning: #E3B341;
+  --warning-soft: rgba(227,179,65,0.14);
+  --danger: #FF6259;
+  --danger-soft: rgba(255,98,89,0.14);
 
-  --gradient-accent: linear-gradient(135deg, var(--accent-fill), var(--accent-deep));
+  /* Barely a gradient — two neighbouring oranges, so a filled control has a
+     little dimension and its dark label clears contrast at both ends. */
+  --gradient-accent: linear-gradient(135deg, var(--accent-hi), var(--accent-fill));
 
   /* ---- 3 · SCALE ------------------------------------------------ */
   /* Type: one token per role, so two labels of the same kind cannot
@@ -136,7 +149,7 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.20);
   --shadow-md: 0 3px 10px rgba(0,0,0,0.24);
   --shadow-lg: 0 10px 28px rgba(0,0,0,0.38);
-  --shadow-accent: 0 2px 14px rgba(110,92,240,0.30);
+  --shadow-accent: 0 2px 10px rgba(242,86,35,0.26);
 
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --dur-fast: 0.12s;
@@ -175,24 +188,27 @@
      retheme moves the values and leaves every existing tag valid. None of
      them is the accent's violet-blue or the clock line's crimson at full
      strength, so a rail is never mistaken for a control or for now. */
-  --tag-blue:   #5B9DFF;  --tag-blue-fill:   rgba(91,157,255,0.16);
-  --tag-violet: #B57BFF;  --tag-violet-fill: rgba(181,123,255,0.16);
-  --tag-rose:   #FF6FC1;  --tag-rose-fill:   rgba(255,111,193,0.16);
-  --tag-red:    #FF7F6E;  --tag-red-fill:    rgba(255,127,110,0.16);
-  --tag-orange: #FF9F45;  --tag-orange-fill: rgba(255,159,69,0.16);
-  --tag-amber:  #EFC94C;  --tag-amber-fill:  rgba(239,201,76,0.16);
-  --tag-green:  #5CD97E;  --tag-green-fill:  rgba(92,217,126,0.16);
-  --tag-teal:   #35C8CE;  --tag-teal-fill:   rgba(53,200,206,0.16);
+  --tag-blue:   #4C9AFF;  --tag-blue-fill:   rgba(76,154,255,0.15);
+  --tag-violet: #A98BFF;  --tag-violet-fill: rgba(169,139,255,0.15);
+  --tag-rose:   #FF6FA8;  --tag-rose-fill:   rgba(255,111,168,0.15);
+  --tag-red:    #F0665C;  --tag-red-fill:    rgba(240,102,92,0.15);
+  /* Pushed towards amber so a tag rail is never mistaken for the brand
+     orange, which is #F25623 and belongs to controls. */
+  --tag-orange: #FF9F3C;  --tag-orange-fill: rgba(255,159,60,0.15);
+  --tag-amber:  #E8C15A;  --tag-amber-fill:  rgba(232,193,90,0.15);
+  --tag-green:  #4CC98A;  --tag-green-fill:  rgba(76,201,138,0.15);
+  --tag-teal:   #35BFC9;  --tag-teal-fill:   rgba(53,191,201,0.15);
 
   /* The timeline's own structure, which is not a tag colour. */
   /* Derived, not literal. Written as its own dark rgba this was defined in
      ONE palette, so light mode drew the timeline's hour lines in the dark
      theme's colour — nearly black on paper. */
-  --rail-line: var(--border-quiet);
-  /* Signal crimson, and the only thing in the product wearing it. The accent
-     is violet precisely so that red can mean one thing: this is now. */
-  --now-line: #FF3B4E;
-  --now-line-soft: rgba(255,59,78,0.18);
+  --rail-line: rgba(47,47,47,0.66);
+  /* NOW is a crimson-pink, deliberately off the brand orange's hue. It is
+     also the only mark in the product that is a full-width hairline with a
+     dot and a live time label, so it is told apart by shape before colour. */
+  --now-line: #FF375F;
+  --now-line-soft: rgba(255,55,95,0.18);
 
   /* Native form controls and scrollbars follow the palette too. The
      light block below flips this; there is no third state, because
@@ -217,60 +233,66 @@
    tag, status or piece of secondary text is legible in one theme
    and not the other. */
 :root[data-theme="light"]{
-  --brand-accent: #4F3FD6;
-  --brand-accent-fill: #5A48DD;
-  --brand-accent-deep: #4132B8;
+  /* The FILL stays the exact anchor, because a filled orange control should
+     look the same in both themes. Only the READING stop changes: #F25623 as
+     text on white measures 3.4:1, so light mode reads in a deeper orange
+     while still filling in the brand one. */
+  --brand-accent: #B8420F;
+  --brand-accent-fill: #F25623;
+  --brand-accent-hi: #FF7A4D;
 
-  /* Paper with a blue cast, so light mode belongs to the same product as
-     the indigo night rather than reading as a different app. */
-  --brand-ground: #F3F5FC;
+  /* Neutral paper, very slightly warm, so it belongs to the same product as
+     the charcoal night rather than reading as a different app. */
+  --brand-ground: #F6F6F4;
   --brand-surface: #FFFFFF;
-  --brand-surface-raised: #F6F8FE;
-  --brand-surface-sunken: #E7ECF8;
-  --brand-border: #D5DCEE;
-  --brand-glow: radial-gradient(120% 90% at 50% -20%, rgba(90,72,221,0.16) 0%, rgba(90,72,221,0.05) 44%, rgba(243,245,252,0) 74%);
+  --brand-surface-raised: #FAFAF8;
+  --brand-surface-sunken: #ECECE8;
+  --brand-border: #DEDEDA;
+  --brand-glow: radial-gradient(130% 80% at 50% -28%, rgba(242,86,35,0.10) 0%, rgba(242,86,35,0.03) 44%, rgba(246,246,244,0) 74%);
 
-  --border-quiet: rgba(213,220,238,0.9);
+  --border-quiet: rgba(222,222,218,0.9);
   --glow: var(--brand-glow);
   /* The top-edge highlight is a light source from above. On a light
      ground that reads as a shadow, not a highlight, so it inverts. */
   --edge-hi: rgba(16,21,29,0.03);
 
-  --text: #0F1526;
-  --text-dim: #4E5872;
+  --text: #171717;
+  --text-dim: #56564F;
   /* Measured on --surface, recessive to --text-dim. Both themes clear the
      floor for their own ground. */
-  --text-faint: #6B7590;
+  --text-faint: #71716A;
 
   --accent-fill: var(--brand-accent-fill);
-  --accent-soft: rgba(79,63,214,0.10);
-  /* White on the filled accent in both themes — the fill stop exists so
-     that stays true without darkening the reading stop. */
-  --accent-contrast: #FFFFFF;
+  --accent-hi: var(--brand-accent-hi);
+  --accent-soft: rgba(242,86,35,0.13);
+  /* Near-black on the orange fill, the same in both themes — the fill never
+     changes, so neither does its label. */
+  --accent-contrast: #171717;
 
-  --success: #1B7A52;  --success-soft: rgba(27,122,82,0.11);
-  --warning: #8A6113;  --warning-soft: rgba(138,97,19,0.12);
-  --danger:  #BE3626;  --danger-soft:  rgba(190,54,38,0.10);
+  --success: #10704A;  --success-soft: rgba(16,112,74,0.11);
+  --warning: #7A5510;  --warning-soft: rgba(122,85,16,0.12);
+  --danger:  #C0342A;  --danger-soft:  rgba(192,52,42,0.10);
 
   /* Black at dark-mode opacity reads as soot on a light ground. */
   --shadow-sm: 0 1px 2px rgba(16,21,29,0.06);
   --shadow-md: 0 3px 10px rgba(16,21,29,0.08);
   --shadow-lg: 0 10px 28px rgba(16,21,29,0.14);
-  --shadow-accent: 0 2px 14px rgba(90,72,221,0.22);
+  --shadow-accent: 0 2px 10px rgba(242,86,35,0.20);
 
   --tag-blue:   #2B5FD0;  --tag-blue-fill:   rgba(43,95,208,0.10);
-  --tag-violet: #7038C9;  --tag-violet-fill: rgba(112,56,201,0.10);
-  --tag-rose:   #BE2E86;  --tag-rose-fill:   rgba(190,46,134,0.10);
-  --tag-red:    #C0422F;  --tag-red-fill:    rgba(192,66,47,0.10);
-  --tag-orange: #A85E10;  --tag-orange-fill: rgba(168,94,16,0.10);
-  --tag-amber:  #85690E;  --tag-amber-fill:  rgba(133,105,14,0.10);
-  --tag-green:  #14764B;  --tag-green-fill:  rgba(20,118,75,0.10);
-  --tag-teal:   #0F6F80;  --tag-teal-fill:   rgba(15,111,128,0.10);
+  --tag-violet: #6C34C4;  --tag-violet-fill: rgba(108,52,196,0.10);
+  --tag-rose:   #BC2B80;  --tag-rose-fill:   rgba(188,43,128,0.10);
+  --tag-red:    #BC3D2B;  --tag-red-fill:    rgba(188,61,43,0.10);
+  --tag-orange: #94540C;  --tag-orange-fill: rgba(148,84,12,0.10);
+  --tag-amber:  #7C620C;  --tag-amber-fill:  rgba(124,98,12,0.10);
+  --tag-green:  #106F46;  --tag-green-fill:  rgba(16,111,70,0.10);
+  --tag-teal:   #0D6A7A;  --tag-teal-fill:   rgba(13,106,122,0.10);
 
   /* Measured against the light ground for an 11px bold label, the tightest
      text in the product. */
-  --now-line: #C81E32;
-  --now-line-soft: rgba(200,30,50,0.13);
+  --rail-line: rgba(222,222,218,0.95);
+  --now-line: #C2003A;
+  --now-line-soft: rgba(194,0,58,0.12);
 
   color-scheme: light;
 }
@@ -1230,6 +1252,10 @@ body.dragging .blk{ cursor: grabbing; }
 .slot-gap{ font-size: var(--fs-micro); color: var(--text-faint); margin-top: 2px; }
 
 /* ---- settings ---- */
+.settings-note{
+  font-size: var(--fs-meta); color: var(--text-faint);
+  margin: var(--space-sm) 0 0; line-height: var(--lh-body);
+}
 .setting-row{
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);
   min-height: var(--touch-min); padding: var(--space-sm) 0;
@@ -1317,7 +1343,19 @@ body.dragging .blk{ cursor: grabbing; }
   border-radius: var(--radius-pill);
 }
 
+/* The add button belongs to the surfaces you capture into. On Settings there
+   is nothing to capture, and it sat on top of the sentence explaining what
+   reminders can actually do — a floating control covering the one line that
+   qualifies a promise. The views are siblings of the button, so this needs no
+   JavaScript and cannot fall out of step with the active tab. */
+#view-settings.active ~ .fab{ display: none; }
+
 /* ---- drag readout ---- */
+/* While a page is being dragged sideways, nothing inside it should be
+   selecting text or firing a hover. */
+body.swiping{ user-select: none; -webkit-user-select: none; }
+body.swiping .sheet{ box-shadow: var(--shadow-lg); }
+
 .drag-badge{
   position: fixed; left: 50%; transform: translateX(-50%);
   top: calc(var(--inset-top) + var(--space-md));
@@ -1380,22 +1418,34 @@ body.dragging .blk{ cursor: grabbing; }
 .ctl:last-child{ border-bottom: 0; }
 .ctl-head{ display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md); }
 .ctl-label{
+  display: block;
   font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.08em;
   font-weight: 700; color: var(--text-faint);
 }
+/* The value is the thing being read, so it is the biggest thing in the
+   control. Tabular figures and a reserved minimum width mean the row does not
+   shuffle sideways while a finger is on the slider — the digits change, the
+   layout does not. */
 .ctl-value{
-  font-size: var(--fs-section); font-weight: 650; color: var(--text);
-  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  font-size: var(--fs-metric); font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  line-height: var(--lh-tight); min-width: 5.2ch;
 }
-.ctl-row{ display: flex; align-items: center; gap: var(--space-xs); margin-top: var(--space-xs); }
+.ctl-cap{
+  font-size: var(--fs-support); color: var(--text-dim);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.ctl-row{ display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-sm); }
+/* Quiet, and still a full touch target. These are the precision fallback, not
+   the way the control is meant to be used. */
 .ctl-nudge{
   flex: none; width: var(--touch-min); height: var(--touch-min);
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border); border-radius: var(--radius-md);
-  background: var(--surface); color: var(--text-dim);
+  border: 1px solid var(--border-quiet); border-radius: var(--radius-md);
+  background: transparent; color: var(--text-faint);
   font-family: inherit; font-size: var(--fs-title); line-height: 1; cursor: pointer;
 }
-.ctl-nudge:active{ background: var(--surface-raised); }
+.ctl-nudge:active{ background: var(--surface-raised); color: var(--text); }
 .ctl-hint{ font-size: var(--fs-meta); color: var(--text-faint); margin-top: var(--space-xs); }
 
 input[type="range"].ctl-range{
@@ -1412,28 +1462,28 @@ input[type="range"].ctl-range:focus-visible::-webkit-slider-thumb{
   box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-md);
 }
 input[type="range"].ctl-range::-webkit-slider-runnable-track{
-  height: 10px; border-radius: var(--radius-pill);
+  height: 8px; border-radius: var(--radius-pill);
   background: linear-gradient(90deg, var(--accent-fill) var(--pct, 0%), var(--surface-sunken) var(--pct, 0%));
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-quiet);
 }
 input[type="range"].ctl-range::-webkit-slider-thumb{
   -webkit-appearance: none; appearance: none;
-  width: 26px; height: 26px; border-radius: var(--radius-pill);
-  background: var(--gradient-accent);
-  border: 2px solid var(--surface);
+  width: 28px; height: 28px; border-radius: var(--radius-pill);
+  background: var(--accent-fill);
+  border: 3px solid var(--surface);
   box-shadow: var(--shadow-md);
-  margin-top: -9px;
+  margin-top: -11px;
 }
 input[type="range"].ctl-range::-moz-range-track{
-  height: 10px; border-radius: var(--radius-pill);
-  background: var(--surface-sunken); border: 1px solid var(--border);
+  height: 8px; border-radius: var(--radius-pill);
+  background: var(--surface-sunken); border: 1px solid var(--border-quiet);
 }
 input[type="range"].ctl-range::-moz-range-progress{
-  height: 10px; border-radius: var(--radius-pill); background: var(--accent-fill);
+  height: 8px; border-radius: var(--radius-pill); background: var(--accent-fill);
 }
 input[type="range"].ctl-range::-moz-range-thumb{
-  width: 24px; height: 24px; border-radius: var(--radius-pill);
-  background: var(--accent-fill); border: 2px solid var(--surface); box-shadow: var(--shadow-md);
+  width: 26px; height: 26px; border-radius: var(--radius-pill);
+  background: var(--accent-fill); border: 3px solid var(--surface); box-shadow: var(--shadow-md);
 }
 
 /* ---- the schedule switch ---- */
@@ -1445,6 +1495,9 @@ input[type="range"].ctl-range::-moz-range-thumb{
 .sched-title{ display: block; font-size: var(--fs-body); color: var(--text); }
 .sched-hint{ display: block; font-size: var(--fs-meta); color: var(--text-dim); margin-top: 2px; }
 .sched-fields{ padding-top: var(--space-xs); }
+/* Three actions need the room shared rather than the primary squeezed. */
+.sheet-actions-3{ display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-sm); }
+.sheet-actions-3 > *{ min-width: 0; }
 
 /* =========================================================
    THE TODAY HERO
@@ -1476,55 +1529,70 @@ input[type="range"].ctl-range::-moz-range-thumb{
 .hero-rel{ font-size: var(--fs-section); font-weight: 700; color: var(--text); line-height: var(--lh-tight); letter-spacing: -0.02em; }
 .hero-full{ font-size: var(--fs-meta); color: var(--text-dim); margin-top: 2px; }
 
-.hero-body{
-  position: relative;
-  margin-top: var(--space-lg);
-  padding: var(--space-lg);
-  border-radius: var(--radius-xl);
-  background: var(--surface);
-  border: 1px solid var(--border-quiet);
-  box-shadow: var(--shadow-md);
+/* ---- the context bar -------------------------------------------
+   One line, and the only summary of "now" in the product. It sticks
+   under the header so it survives the landing scroll — which is the
+   whole point of it, and the thing the tall hero it replaced could
+   not do.
+
+   Sticky rather than fixed: fixed would take it out of flow and it
+   would then also float over the tab bar and the sheets. Sticky
+   keeps it inside the view it belongs to. */
+.ctx-holder{
+  position: sticky;
+  top: var(--inset-top);
+  z-index: 20;
+  margin: 0 calc(-1 * var(--space-lg)) var(--space-lg);
+  padding: var(--space-xs) var(--space-lg) var(--space-sm);
+  /* Opaque: the timeline scrolls underneath it. */
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-quiet);
 }
-.hero-body::before{
-  content: ""; position: absolute; left: 0; top: var(--space-lg); bottom: var(--space-lg);
-  width: 3px; border-radius: var(--radius-pill);
+.ctxbar{
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: var(--space-sm);
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: var(--space-sm) var(--space-md) calc(var(--space-sm) + 3px);
+  border: 1px solid var(--border-quiet);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-align: left;
+  font-family: inherit;
+  overflow: hidden;
+}
+button.ctxbar{ cursor: pointer; }
+.ctxbar::before{
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
   background: var(--c, var(--accent));
 }
-.hero-quiet::before{ background: var(--border); }
-.hero-kicker{
-  display: block;
+.ctx-clear::before, .ctx-empty::before, .ctx-other::before{ background: var(--border); }
+.ctx-kicker{
   font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.1em;
-  font-weight: 700; color: var(--c, var(--accent));
+  font-weight: 700; color: var(--c, var(--accent)); white-space: nowrap;
 }
-.hero-quiet .hero-kicker{ color: var(--text-faint); }
-.hero-title{
-  font-size: var(--fs-display); font-weight: 700; line-height: var(--lh-tight);
-  letter-spacing: -0.02em; margin: var(--space-xs) 0 0; color: var(--text);
-  text-wrap: balance;
+.ctx-clear .ctx-kicker, .ctx-empty .ctx-kicker, .ctx-other .ctx-kicker{ color: var(--text-faint); }
+.ctx-title{
+  font-size: var(--fs-body); font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.hero-meta{ font-size: var(--fs-support); color: var(--text-dim); margin: var(--space-xs) 0 0; }
-.hero-prog{
-  height: 5px; border-radius: var(--radius-pill); background: var(--surface-sunken);
-  margin-top: var(--space-md); overflow: hidden;
+.ctx-value{
+  font-size: var(--fs-meta); color: var(--text-dim); white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
-.hero-prog span{ display: block; height: 100%; background: var(--c, var(--accent)); border-radius: var(--radius-pill); }
-.hero-open{
-  margin-top: var(--space-md); min-height: var(--touch-min); padding: 0 var(--space-lg);
-  border-radius: var(--radius-pill); border: 0;
-  background: var(--gradient-accent); color: var(--accent-contrast);
-  font-family: inherit; font-size: var(--fs-support); font-weight: 650; cursor: pointer;
-  box-shadow: var(--shadow-accent);
+/* Elapsed time against this block's own duration. Derived from the clock, so
+   it is true — and it is deliberately not a score of anything. */
+.ctx-prog{
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: var(--surface-sunken);
 }
+.ctx-prog span{ display: block; height: 100%; background: var(--c, var(--accent)); }
 
-.hero-up{ margin-top: var(--space-sm); }
-.hero-up-row{
-  display: flex; align-items: center; gap: var(--space-sm);
-  width: 100%; min-height: var(--touch-min); padding: var(--space-sm) var(--space-md);
-  background: none; border: 0; cursor: pointer; text-align: left; font-family: inherit;
-}
-.hero-up-rail{ width: 3px; align-self: stretch; border-radius: var(--radius-pill); background: var(--c, var(--border)); }
-.hero-up-title{ flex: 1; font-size: var(--fs-support); color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hero-up-time{ font-size: var(--fs-meta); color: var(--text-faint); font-variant-numeric: tabular-nums; }
+/* The running block, so the timeline agrees with the bar above it. */
+.blk-now{ box-shadow: inset 0 0 0 1.5px var(--c, var(--accent)); }
 
 /* The FAB picks up the ambient glow so it reads as the one lit thing. */
 .fab{ box-shadow: var(--shadow-lg), var(--shadow-accent); }
@@ -1609,15 +1677,16 @@ input[type="range"].ctl-range::-moz-range-thumb{
       <span class="form-label" id="quickTagLabel">Tag</span>
       <div class="tagrow" id="quickTags" role="group" aria-labelledby="quickTagLabel"></div>
     </div>
-    <div class="sheet-actions">
+    <div class="sheet-actions sheet-actions-3">
       <button class="btn-secondary" onclick="closeQuickAdd()">Cancel</button>
+      <button class="btn-secondary" onclick="expandQuickAdd()">More options</button>
       <button class="btn-primary" onclick="saveQuickAdd()">Add</button>
     </div>
   </div>
 </div>
 
 <!-- ITEM DETAIL — a destination, so it is a page -->
-<div class="overlay overlay-page" id="itemDetailOverlay">
+<div class="overlay overlay-page" id="itemDetailOverlay" data-swipe="1">
   <div class="sheet">
     <div class="page-topbar">
       <button class="icon-btn" onclick="closeItemDetail()" aria-label="Back"></button>
@@ -1633,7 +1702,7 @@ input[type="range"].ctl-range::-moz-range-thumb{
 </div>
 
 <!-- ITEM FORM — create and edit are the same page -->
-<div class="overlay overlay-page" id="itemFormOverlay">
+<div class="overlay overlay-page" id="itemFormOverlay" data-swipe="1">
   <div class="sheet">
     <div class="page-topbar">
       <button class="icon-btn" onclick="closeItemForm()" aria-label="Back"></button>
@@ -1766,6 +1835,35 @@ input[type="range"].ctl-range::-moz-range-thumb{
       <button class="btn-secondary" onclick="closeAutoPlan()">Keep my schedule</button>
       <button class="btn-primary" id="autoPlanApply" onclick="applyAutoPlan()">Apply changes</button>
     </div>
+  </div>
+</div>
+
+<!-- SETTINGS GROUPS — one sheet each, so the root stays a list -->
+<div class="overlay" id="themeOverlay" onclick="backdropDismiss(event, closeThemeSheet)">
+  <div class="sheet">
+    <div class="sheet-scroll"><h2 id="themeTitle">Theme</h2><div id="themeBody"></div></div>
+    <div class="sheet-actions"><button class="btn-secondary btn-block" onclick="closeThemeSheet()">Done</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="dayOverlay" onclick="backdropDismiss(event, closeDaySheet)">
+  <div class="sheet">
+    <div class="sheet-scroll"><h2 id="dayTitle">Your day</h2><div id="dayBody"></div></div>
+    <div class="sheet-actions"><button class="btn-secondary btn-block" onclick="closeDaySheet()">Done</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="schedulingOverlay" onclick="backdropDismiss(event, closeSchedulingSheet)">
+  <div class="sheet">
+    <div class="sheet-scroll"><h2 id="schedulingTitle">Scheduling</h2><div id="schedulingBody"></div></div>
+    <div class="sheet-actions"><button class="btn-secondary btn-block" onclick="closeSchedulingSheet()">Done</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="reminderOverlay" onclick="backdropDismiss(event, closeReminderSheet)">
+  <div class="sheet">
+    <div class="sheet-scroll"><h2 id="reminderTitle">Reminders</h2><div id="reminderBody"></div></div>
+    <div class="sheet-actions"><button class="btn-secondary btn-block" onclick="closeReminderSheet()">Done</button></div>
   </div>
 </div>
 
@@ -1918,8 +2016,8 @@ const APP_CONFIG = {
   name: 'Dayplan',
   shortName: 'Dayplan',
   description: 'Plan your day on a timeline you can move.',
-  themeColor: '#0B0F16',
-  backgroundColor: '#0B0F16'
+  themeColor: '#101010',
+  backgroundColor: '#101010'
 };
 
 /* APP_ID has to be safe as a storage key prefix, a Cache Storage name and a
@@ -1961,6 +2059,30 @@ function validateAppId(id){
    New products replace this array wholesale. See NEW-PROJECT.md.
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v0-3-0-rc-1',
+    version: '0.3.0-rc.1',
+    title: 'Release candidate',
+    date: '2026-09-09',
+    summary: 'A candidate for iPhone acceptance: orange on near-black, readable time controls, one form, a settings list, a context bar that stays put, and swipe-back.',
+    newFeatures: [
+      'Swipe right on a task to go back to the day you opened it from',
+      'A context line that stays on screen while you read the timeline, so what is happening now is always visible',
+      'Every option — repeat, reminders, priority, deadline, allowed hours — can be set before you save for the first time'
+    ],
+    improvements: [
+      'Near-black surfaces with one orange, replacing the palette carried over from the foundation',
+      'Time and length now show the value you are setting, and the time it ends, in figures you can read at a glance',
+      'Settings is a list of what things are set to, with each adjuster in its own sheet'
+    ],
+    fixes: [
+      'A half-typed capture is kept when the sheet is dismissed, when the app is backgrounded, and across a refresh',
+      'A draft written by an earlier version keeps the day and time it was placed on',
+      'Resuming a draft no longer moves it to whichever day is on screen',
+      'The device back gesture returns from a task instead of leaving the app',
+      'The marker on the running block now moves when one activity ends and the next begins'
+    ]
+  },
   {
     id: 'v0-2-0',
     version: '0.2.0',
@@ -3733,7 +3855,14 @@ function applyTheme(){
      config:sync region, which must never be hand-edited to add one. */
   try{
     const meta = document.querySelector('meta[name="theme-color"]');
-    if(meta) meta.setAttribute('content', resolved === 'light' ? '#F2F4F8' : APP_CONFIG.themeColor);
+    /* Read back from the resolved palette rather than repeating a hex here.
+       Two hand-written copies of the ground is how the status bar ends up
+       still wearing the colour of a palette that was replaced. */
+    let ground = '';
+    try{
+      ground = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    }catch(e){}
+    if(meta) meta.setAttribute('content', ground || APP_CONFIG.themeColor);
   }catch(e){}
   return resolved;
 }
@@ -4365,8 +4494,21 @@ function refreshTodayDate(){
    shadow, no second container. The rail carries the category, the
    height carries the duration, and the text carries the rest.
    ========================================================= */
+/* One owner for "is this the block the clock is inside". The renderer and the
+   clock tick both ask it, so a freshly drawn timeline and a thirty-second
+   update cannot disagree about which block is running. */
+function occurrenceIsRunning(occ, m){
+  if(!occ || occ.continuation || occ.status !== 'open') return false;
+  if(occ.date !== todayCivil()) return false;
+  const at = m === undefined ? nowMinute() : m;
+  return occ.visibleStart <= at && at < occ.visibleEnd;
+}
+
 function blockClasses(occ){
   const cls = ['blk'];
+  /* The block the clock is inside, so the timeline and the bar at the top of
+     the screen agree about which one is running. */
+  if(occurrenceIsRunning(occ)) cls.push('blk-now');
   const color = colorKeyOf({ tagId: occ.tagId });
   cls.push(color ? 'blk-' + color : 'blk-plain');
   if(occ.kind === 'event') cls.push('blk-fixed');
@@ -4657,6 +4799,9 @@ function renderToday(){
   const tl = renderTimeline(civil, { id: 'todayTimeline', editable: false });
   el.innerHTML =
     renderHero(civil) +
+    /* The holder is what stays put; the bar inside it is what gets rebuilt
+       when the state changes, so the sticky position never re-anchors. */
+    '<div class="ctx-holder" id="ctxHolder">' + renderContextBar(civil) + '</div>' +
     renderLoadNotice(civil) +
     tl.html;
   _timelineWindows.todayTimeline = tl.win;
@@ -4912,9 +5057,19 @@ function renderInbox(){
    pointer slider would have to re-earn all three.
    ========================================================= */
 const CTL = {};
+/* A kind owns its range, its formatting AND its words. "Earlier" and "Later"
+   on a duration control is what a screen reader used to announce for a button
+   that makes something shorter — the label has to come from the kind, not
+   from the direction. */
 const CTL_KINDS = {
-  time:     { min: 0,  max: 1435, step: 5,  fmt: m => formatMinute(m) },
-  duration: { min: 15, max: 480,  step: 5,  fmt: m => formatDuration(m) }
+  time: {
+    min: 0, max: 1435, step: 5, fmt: m => formatMinute(m),
+    down: '5 minutes earlier', up: '5 minutes later'
+  },
+  duration: {
+    min: 15, max: 480, step: 5, fmt: m => formatDuration(m),
+    down: '5 minutes shorter', up: '5 minutes longer'
+  }
 };
 
 function ctlInit(id, kind, value, opts){
@@ -4924,7 +5079,15 @@ function ctlInit(id, kind, value, opts){
     kind: kind, value: value === null || value === undefined ? null : value,
     min: o.min === undefined ? k.min : o.min,
     max: o.max === undefined ? k.max : o.max,
-    step: k.step, label: o.label || '', hint: o.hint || '', onChange: o.onChange
+    step: k.step, label: o.label || '', hint: o.hint || '', onChange: o.onChange,
+    /* A function, evaluated on every paint, that says what this value MEANS —
+       the end time a start and a duration add up to. Derived on read so it
+       cannot disagree with the two controls it comes from. */
+    caption: typeof o.caption === 'function' ? o.caption : null,
+    /* Sibling controls whose caption depends on this one's value. Changing a
+       start has to move the end shown under the duration, or the pair
+       silently disagree. */
+    linked: Array.isArray(o.linked) ? o.linked : []
   };
 }
 function ctlValue(id){ return CTL[id] ? CTL[id].value : null; }
@@ -4948,13 +5111,15 @@ function ctlHtml(id){
   const v = c.value === null ? c.min : c.value;
   const pct = ((v - c.min) / (c.max - c.min)) * 100;
   return '<div class="ctl" id="' + escapeAttr(id) + '_ctl">' +
+    '<span class="ctl-label" id="' + escapeAttr(id) + '_lab">' + escapeHtml(c.label) + '</span>' +
     '<div class="ctl-head">' +
-      '<span class="ctl-label" id="' + escapeAttr(id) + '_lab">' + escapeHtml(c.label) + '</span>' +
       '<span class="ctl-value" id="' + escapeAttr(id) + '_val">' +
         escapeHtml(c.value === null ? '—' : k.fmt(c.value)) + '</span>' +
+      '<span class="ctl-cap" id="' + escapeAttr(id) + '_cap">' +
+        escapeHtml(c.caption ? (c.caption() || '') : '') + '</span>' +
     '</div>' +
     '<div class="ctl-row">' +
-      '<button type="button" class="ctl-nudge" aria-label="' + escapeAttr('Earlier: ' + c.label) + '" ' +
+      '<button type="button" class="ctl-nudge" aria-label="' + escapeAttr(c.label + ': ' + k.down) + '" ' +
         'onclick="ctlNudge(\'' + escapeAttr(id) + '\',-1)">&minus;</button>' +
       '<input type="range" class="ctl-range" id="' + escapeAttr(id) + '_rng" ' +
         'min="' + c.min + '" max="' + c.max + '" step="' + c.step + '" value="' + v + '" ' +
@@ -4962,7 +5127,7 @@ function ctlHtml(id){
         'aria-labelledby="' + escapeAttr(id) + '_lab" ' +
         'aria-valuetext="' + escapeAttr(c.value === null ? 'not set' : k.fmt(c.value)) + '" ' +
         'oninput="ctlInput(\'' + escapeAttr(id) + '\', this.value)">' +
-      '<button type="button" class="ctl-nudge" aria-label="' + escapeAttr('Later: ' + c.label) + '" ' +
+      '<button type="button" class="ctl-nudge" aria-label="' + escapeAttr(c.label + ': ' + k.up) + '" ' +
         'onclick="ctlNudge(\'' + escapeAttr(id) + '\',1)">+</button>' +
     '</div>' +
     (c.hint ? '<div class="ctl-hint">' + escapeHtml(c.hint) + '</div>' : '') +
@@ -4980,6 +5145,10 @@ function ctlInput(id, raw){
 /* A control either belongs to a preference, which commits immediately, or to
    a form, whose in-progress value belongs in the draft. One place decides. */
 function ctlChanged(c){
+  /* A start moving changes the end shown under the duration, and the other
+     way round. Repainting the pair here is what keeps the two captions from
+     disagreeing about the same derived time. */
+  (c.linked || []).forEach(other => { if(CTL[other]) ctlPaint(other); });
   if(typeof c.onChange === "function"){ c.onChange(c.value); return; }
   scheduleDraftSave();
 }
@@ -4996,6 +5165,8 @@ function ctlPaint(id){
   const k = CTL_KINDS[c.kind];
   const val = document.getElementById(id + '_val');
   if(val) val.textContent = c.value === null ? '—' : k.fmt(c.value);
+  const cap = document.getElementById(id + '_cap');
+  if(cap) cap.textContent = c.caption ? (c.caption() || '') : '';
   const rng = document.getElementById(id + '_rng');
   if(rng){
     const v = c.value === null ? c.min : c.value;
@@ -5013,6 +5184,27 @@ function ctlPaint(id){
 function ctlMount(hostId, id){
   const host = document.getElementById(hostId);
   if(host) host.innerHTML = ctlHtml(id);
+}
+
+/* The end a start and a duration add up to, in words, for the caption under
+   both of them. Derived on every read, never stored: an end time written down
+   is an end time that can disagree with its own parts. */
+function ctlEndCaption(timeId, durId){
+  return function(){
+    const st = ctlValue(timeId), du = ctlValue(durId);
+    if(st === null || du === null) return '';
+    return 'ends ' + formatMinute(st + du);
+  };
+}
+
+/* Binds a start and a duration into one pair: each carries the same derived
+   end, and each repaints the other. Used everywhere a time and a length are
+   edited together, so the control language is identical in every sheet. */
+function ctlPair(timeId, durId, opts){
+  const o = opts || {};
+  const cap = ctlEndCaption(timeId, durId);
+  ctlInit(timeId, 'time', o.start, { label: o.startLabel || 'Starts', caption: cap, linked: [durId] });
+  ctlInit(durId, 'duration', o.duration, { label: o.durationLabel || 'Takes', caption: cap, linked: [timeId] });
 }
 
 /* The next quarter hour — what a new item means by "now-ish", and a far better
@@ -5064,106 +5256,145 @@ function heroArrow(dir, target){
 }
 
 function renderHero(civil){
-  const isToday = civil === todayCivil();
-  const parts = [];
+  /* The day, and the way between days. The answer to "what am I doing now"
+     is NOT here any more — see the context bar below, which is the one
+     summary and the one that survives the landing scroll. */
+  return '<header class="hero">' +
+    '<div class="hero-glow" aria-hidden="true"></div>' +
+    '<div class="hero-nav">' +
+      heroArrow(-1, 'today') +
+      '<button type="button" class="hero-date" onclick="jumpToday(\'today\')">' +
+        '<span class="hero-rel">' + escapeHtml(relativeCivilLabel(civil)) + '</span>' +
+        '<span class="hero-full">' + escapeHtml(formatCivil(civil, 'long')) + '</span>' +
+      '</button>' +
+      heroArrow(1, 'today') +
+    '</div></header>';
+}
 
-  parts.push('<header class="hero">');
-  parts.push('<div class="hero-glow" aria-hidden="true"></div>');
+/* =========================================================
+   THE CONTEXT BAR
+   ---------------------------------------------------------
+   WHAT WENT WRONG: the answer to "what am I doing now" lived in a
+   tall hero ABOVE the timeline, and the landing scroll centres the
+   clock line. The app opened, scrolled past its own answer, and
+   left the person looking at a wall of blocks. It was correct and
+   invisible at the same time.
 
-  parts.push('<div class="hero-nav">' +
-    heroArrow(-1, 'today') +
-    '<button type="button" class="hero-date" onclick="jumpToday(\'today\')">' +
-      '<span class="hero-rel">' + escapeHtml(relativeCivilLabel(civil)) + '</span>' +
-      '<span class="hero-full">' + escapeHtml(formatCivil(civil, 'long')) + '</span>' +
-    '</button>' +
-    heroArrow(1, 'today') +
-  '</div>');
+   This is one line, and it STICKS. It stays on screen while the
+   timeline is read, which is the only thing that makes a summary of
+   "now" worth having. The hero above carries the day and the way
+   between days and nothing else: two summaries competing over one
+   question is what this replaces, not something to rebuild one
+   scroll position higher.
 
-  if(!isToday){
-    /* Another day cannot have a "now". It gets what it does have. */
+   Four states, because they are four different questions:
+     NOW    something is running
+     NEXT   nothing is running and the next thing is imminent
+     FREE   nothing is running and there is real time before it
+     CLEAR  the day has nothing left in it
+   A date that is not today has no "now" at all, and never pretends
+   to: it reports what is planned.
+   ========================================================= */
+const CONTEXT_SOON = 15;   /* minutes. Under this, "next" beats "free". */
+
+/* Pure, so every state is testable without a clock or a browser. */
+function contextState(civil, atMinute){
+  if(civil !== todayCivil()){
     const load = workloadForDate(civil);
-    parts.push('<div class="hero-body hero-quiet">');
-    if(load.count){
-      parts.push('<span class="hero-kicker">Planned</span>');
-      parts.push('<h2 class="hero-title">' + load.count + (load.count === 1 ? ' thing' : ' things') + '</h2>');
-      parts.push('<p class="hero-meta">' + escapeHtml(formatDuration(load.fixedMinutes + load.flexMinutes)) +
-        ' scheduled' + (load.isOverloaded ? ' · ' + escapeHtml(formatDuration(load.overloadBy)) + ' will not fit' : '') + '</p>');
-    } else {
-      parts.push('<span class="hero-kicker">Open</span>');
-      parts.push('<h2 class="hero-title">Nothing planned</h2>');
-      parts.push('<p class="hero-meta">This day is still yours.</p>');
-    }
-    parts.push('</div></header>');
-    return parts.join('');
+    return { kind: 'other', count: load.count,
+             minutes: load.fixedMinutes + load.flexMinutes, overloadBy: load.overloadBy };
   }
-
-  const m = nowMinute();
+  const m = atMinute === undefined ? nowMinute() : atMinute;
   const cn = currentAndNext(civil, m);
-
   if(cn.current){
-    const left = Math.max(0, Math.round(cn.current.visibleEnd - m));
     const span = Math.max(1, cn.current.visibleEnd - cn.current.visibleStart);
-    const pct = Math.max(0, Math.min(100, ((m - cn.current.visibleStart) / span) * 100));
-    const ck = colorKeyOf({ tagId: cn.current.tagId });
-    parts.push('<div class="hero-body' + (ck ? ' ink-' + ck : '') + '">');
-    parts.push('<span class="hero-kicker">Now</span>');
-    parts.push('<h2 class="hero-title">' + escapeHtml(cn.current.title) + '</h2>');
-    parts.push('<p class="hero-meta">' + escapeHtml(formatDuration(left)) + ' left · until ' +
-      escapeHtml(formatMinute(cn.current.visibleEnd)) + '</p>');
-    parts.push('<div class="hero-prog" role="img" aria-label="' +
-      escapeAttr(Math.round(pct) + '% through this block') + '">' +
-      '<span style="width:' + pct.toFixed(1) + '%"></span></div>');
-    parts.push('<button type="button" class="hero-open" onclick="openOccurrence(\'' +
-      escapeAttr(cn.current.itemId) + '\',\'' + escapeAttr(civil) + '\')">Open</button>');
-    parts.push('</div>');
-  } else if(cn.next){
-    const ck = colorKeyOf({ tagId: cn.next.tagId });
-    parts.push('<div class="hero-body' + (ck ? ' ink-' + ck : '') + '">');
-    parts.push('<span class="hero-kicker">Next</span>');
-    parts.push('<h2 class="hero-title">' + escapeHtml(cn.next.title) + '</h2>');
-    parts.push('<p class="hero-meta">' + escapeHtml(formatGap(cn.next.visibleStart - m)) + ' · ' +
-      escapeHtml(formatMinute(cn.next.visibleStart)) + '</p>');
-    parts.push('<button type="button" class="hero-open" onclick="openOccurrence(\'' +
-      escapeAttr(cn.next.itemId) + '\',\'' + escapeAttr(civil) + '\')">Open</button>');
-    parts.push('</div>');
-  } else if(cn.all.length){
-    const done = cn.all.filter(o => o.status === 'done').length;
-    parts.push('<div class="hero-body hero-quiet">');
-    parts.push('<span class="hero-kicker">Rest of day</span>');
-    parts.push('<h2 class="hero-title">Nothing else scheduled</h2>');
-    parts.push('<p class="hero-meta">' + done + ' of ' + cn.all.length + ' done today</p>');
-    parts.push('</div>');
-  } else {
-    parts.push('<div class="hero-body hero-quiet">');
-    parts.push('<span class="hero-kicker">Today</span>');
-    parts.push('<h2 class="hero-title">' + (isFirstRun() ? 'Your day, on a timeline' : 'Nothing planned yet') + '</h2>');
-    parts.push('<p class="hero-meta">' + (isFirstRun()
-      ? 'Set when your day runs, then add the first thing.'
-      : 'Add the first thing and the rest builds around it.') + '</p>');
-    parts.push('<button type="button" class="hero-open" onclick="' +
-      (isFirstRun() ? 'startOnboarding(false)' : 'openQuickAdd(todayDate)') + '">' +
-      (isFirstRun() ? 'Set up my day' : 'Add something') + '</button>');
-    parts.push('</div>');
+    return {
+      kind: 'now', occ: cn.current,
+      left: Math.max(0, Math.round(cn.current.visibleEnd - m)),
+      pct: Math.max(0, Math.min(100, ((m - cn.current.visibleStart) / span) * 100))
+    };
   }
-
-  /* What follows the thing in the hero — the second half of the question.
-     Two at most: a third is a list, and the timeline below is the list. */
-  const upcoming = cn.all.filter(o => o.visibleStart > m).slice(0, 2);
-  if(upcoming.length && cn.current){
-    parts.push('<div class="hero-up">');
-    upcoming.forEach(o => {
-      const ck = colorKeyOf({ tagId: o.tagId });
-      parts.push('<button type="button" class="hero-up-row" onclick="openOccurrence(\'' +
-        escapeAttr(o.itemId) + '\',\'' + escapeAttr(civil) + '\')">' +
-        '<span class="hero-up-rail ' + (ck ? 'rail-' + ck : '') + '" aria-hidden="true"></span>' +
-        '<span class="hero-up-title">' + escapeHtml(o.title) + '</span>' +
-        '<span class="hero-up-time">' + escapeHtml(formatMinute(o.visibleStart)) + '</span></button>');
-    });
-    parts.push('</div>');
+  if(cn.next){
+    const until = Math.max(0, Math.round(cn.next.visibleStart - m));
+    return { kind: until <= CONTEXT_SOON ? 'next' : 'free', occ: cn.next, until: until };
   }
+  if(cn.all.length){
+    return { kind: 'clear', done: cn.all.filter(o => o.status === 'done').length,
+             total: cn.all.length };
+  }
+  return { kind: 'empty' };
+}
 
-  parts.push('</header>');
-  return parts.join('');
+function contextCopy(st){
+  if(st.kind === 'now')   return { kicker: 'Now',  title: st.occ.title,
+                                   value: formatDuration(st.left) + ' left' };
+  if(st.kind === 'next')  return { kicker: 'Next', title: st.occ.title,
+                                   value: 'in ' + formatDuration(st.until) };
+  if(st.kind === 'free')  return { kicker: 'Free',
+                                   title: formatDuration(st.until) + ' until ' + st.occ.title,
+                                   value: formatMinute(st.occ.visibleStart) };
+  if(st.kind === 'clear') return { kicker: 'Clear', title: 'Nothing else today',
+                                   value: st.done + ' of ' + st.total + ' done' };
+  if(st.kind === 'other'){
+    if(!st.count) return { kicker: 'Open', title: 'Nothing planned', value: '' };
+    return { kicker: 'Planned', title: st.count + (st.count === 1 ? ' thing' : ' things'),
+             value: st.overloadBy ? formatDuration(st.overloadBy) + ' over'
+                                  : formatDuration(st.minutes) };
+  }
+  return { kicker: 'Today', title: 'Nothing planned yet', value: '' };
+}
+
+/* Changes only when the bar needs rebuilding. A tick that merely moves a
+   number must not replace markup someone may be touching. */
+function contextKey(st){
+  return st.kind + '|' + (st.occ ? st.occ.key : '') + '|' + (st.total === undefined ? '' : st.total);
+}
+let _ctxKey = null;
+
+function renderContextBar(civil){
+  const st = contextState(civil);
+  const copy = contextCopy(st);
+  const ck = st.occ ? colorKeyOf({ tagId: st.occ.tagId }) : null;
+  _ctxKey = contextKey(st);
+
+  const inner =
+    '<span class="ctx-kicker">' + escapeHtml(copy.kicker) + '</span>' +
+    '<span class="ctx-title">' + escapeHtml(copy.title) + '</span>' +
+    '<span class="ctx-value">' + escapeHtml(copy.value) + '</span>' +
+    (st.kind === 'now'
+      ? '<span class="ctx-prog" aria-hidden="true"><span style="width:' + st.pct.toFixed(1) + '%"></span></span>'
+      : '');
+
+  const cls = 'ctxbar ctx-' + st.kind + (ck ? ' ink-' + ck : '');
+  if(st.occ){
+    return '<button type="button" class="' + cls + '" id="ctxBar" ' +
+      'onclick="openOccurrence(\'' + escapeAttr(st.occ.itemId) + '\',\'' + escapeAttr(civil) + '\')">' +
+      inner + '</button>';
+  }
+  return '<div class="' + cls + '" id="ctxBar">' + inner + '</div>';
+}
+
+/* Called by the clock. Updates TEXT, and rebuilds only when the state itself
+   changed — never the whole of Today, which is what used to happen every
+   thirty seconds and took scroll position and any open row with it. */
+function paintContextBar(){
+  const host = document.getElementById('ctxBar');
+  if(!host) return;
+  const st = contextState(todayDate);
+  if(contextKey(st) !== _ctxKey){
+    const holder = document.getElementById('ctxHolder');
+    if(holder) holder.innerHTML = renderContextBar(todayDate);
+    return;
+  }
+  const copy = contextCopy(st);
+  const v = host.querySelector ? host.querySelector('.ctx-value') : null;
+  if(v) v.textContent = copy.value;
+  const t = host.querySelector ? host.querySelector('.ctx-title') : null;
+  if(t) t.textContent = copy.title;
+  if(st.kind === 'now'){
+    const bar = host.querySelector ? host.querySelector('.ctx-prog span') : null;
+    if(bar && bar.style) bar.style.width = st.pct.toFixed(1) + '%';
+  }
 }
 
 /* =========================================================
@@ -5460,6 +5691,268 @@ function onDragKey(e){
   }
 }
 
+/* =========================================================
+   SWIPE BACK
+   ---------------------------------------------------------
+   A task page is opened from a day, and the way back to that day
+   should be the gesture the whole platform uses for "back".
+
+   IT IS NOT A SECOND NAVIGATION SYSTEM. A completed swipe calls the
+   surface's own declared close function — the same one the Back
+   button calls, the same one Escape and the device back gesture
+   reach through the overlay engine. The gesture decides WHEN to
+   leave; the existing exit policy decides WHETHER, and unwinds the
+   scroll lock, the focus and the stack exactly as it always did.
+   That is also why the context underneath is preserved without
+   doing anything: it was never unmounted, and nothing here
+   re-runs a tab landing or scrolls to NOW.
+
+   THE RULES, and what each is for:
+
+     Only the TOP surface swipes. A sheet or a confirmation sitting
+     above owns the interaction while it is there.
+
+     A gesture starting in a slider, a text field, a selection or a
+     horizontal scroller belongs to that control, not to navigation.
+
+     The left edge is left alone. Safari owns an edge gesture in a
+     browser tab; competing with it produces two backs from one
+     swipe. This starts inland.
+
+     Horizontal INTENT, not horizontal movement: past a threshold
+     and clearly more sideways than vertical. Vertical scrolling
+     stays scrolling.
+
+     One finger. A second pointer cancels, rather than leaving the
+     page half-dragged under a pinch.
+   ========================================================= */
+const SWIPE_EDGE_GUARD = 24;    /* px of left edge left to the browser */
+const SWIPE_CLAIM_PX = 12;      /* movement before the gesture is ours */
+const SWIPE_RATIO = 1.5;        /* how much more sideways than vertical */
+const SWIPE_COMPLETE = 0.32;    /* fraction of the width that commits */
+const SWIPE_VELOCITY = 0.5;     /* px per ms that commits a flick */
+/* A flick still has to have GONE somewhere. Velocity is measured across the
+   last pair of move events, which is a very short baseline — a 26px twitch
+   reads as several px/ms and used to navigate on its own. Requiring real
+   travel as well is what separates a flick from a tremor. */
+const SWIPE_FLICK_MIN = 0.12;   /* fraction of the width a flick must cover */
+
+let _swipe = null;
+
+/* A settling transition is still part of the gesture. It used to be a bare
+   setTimeout that nobody held: _swipe was cleared the moment the animation
+   started, so a page opened for a DIFFERENT task during those 200ms was the
+   page the delayed callback closed. Tracking it is what makes the completion
+   belong to the session that started it. */
+let _settling = null;
+
+/* Bumped every time a task page is opened. A completion callback carries the
+   session it was created in and does nothing if that is no longer the one on
+   screen. */
+let _pageSession = 0;
+function beginPageSession(){ _pageSession++; return _pageSession; }
+
+/* Any interruption — a new gesture, a new page, a rotation — invalidates a
+   completion that has not run yet. */
+function abortSettle(){
+  if(!_settling) return;
+  if(_settling.timer) clearTimeout(_settling.timer);
+  const el = _settling.sheet;
+  if(el && el.style){ el.style.transition = ''; el.style.transform = ''; el.style.willChange = ''; }
+  try{ document.body.classList.remove('swiping'); }catch(e){}
+  _settling = null;
+}
+
+function swipeableTop(){
+  const ov = topOpenSheet();
+  if(!ov) return null;
+  if(!ov.classList || !ov.classList.contains('overlay-page')) return null;
+  if(ov.getAttribute && ov.getAttribute('data-swipe') !== '1') return null;
+  return ov;
+}
+
+/* Controls INSIDE the page that own their own horizontal gestures.
+
+   The walk stops at .sheet, and that boundary is the whole point. The page
+   container itself reports a scrollWidth a little wider than its clientWidth
+   — a scrollbar's worth — so a rule that kept walking past it decided every
+   gesture belonged to a horizontal scroller and the swipe never fired at all.
+   "A control that scrolls sideways" means something within the page, never
+   the page. */
+function swipeExempt(el, root){
+  let node = el, guard = 0;
+  while(node && guard++ < 24){
+    if(node === root) return false;
+    if(node.classList && (node.classList.contains('sheet') ||
+       node.classList.contains('overlay'))) return false;
+    const tag = node.tagName;
+    if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if(node.getAttribute && node.getAttribute('contenteditable') === 'true') return true;
+    if(node.classList && (node.classList.contains('ctl-range') ||
+       node.classList.contains('swipe-exempt'))) return true;
+    /* Anything that scrolls sideways gets the sideways gesture. */
+    if(node.scrollWidth !== undefined && node.clientWidth !== undefined &&
+       node.scrollWidth > node.clientWidth + 4) return true;
+    node = node.parentNode;
+  }
+  return false;
+}
+
+function onSwipeDown(e){
+  /* A second finger during a live gesture cancels it rather than being
+     treated as a fresh one. */
+  if(_swipe){ cancelSwipe(); return; }
+  /* A page still settling is not ready to be swiped again. */
+  if(_settling) return;
+  if(_dragState || _dragArm) return;
+  if(!pointerIsTouch(e)) return;                 /* pointer devices have Back */
+  if(e.isPrimary === false) return;
+  const ov = swipeableTop();
+  if(!ov) return;
+  if(e.clientX <= SWIPE_EDGE_GUARD) return;      /* leave the edge to Safari */
+  try{ if(window.getSelection && String(window.getSelection()) !== '') return; }catch(err){}
+
+  const sheet = ov.querySelector ? ov.querySelector('.sheet') : null;
+  if(!sheet) return;
+  if(swipeExempt(e.target, sheet)) return;
+  const rect = rectOf(sheet);
+  _swipe = {
+    ov: ov, sheet: sheet,
+    x0: e.clientX, y0: e.clientY,
+    /* Measured ONCE, here. Reading layout on every pointermove is what makes
+       a gesture like this stutter. */
+    width: rect ? rect.width : (window.innerWidth || 375),
+    pointerId: e.pointerId,
+    session: _pageSession,
+    claimed: false, dx: 0,
+    t0: Date.now(), lastX: e.clientX, lastT: Date.now(), vx: 0,
+    reduced: prefersReducedMotion()
+  };
+}
+
+function onSwipeMove(e){
+  const w = _swipe;
+  if(!w) return;
+  /* Only the finger that started this gesture drives it. */
+  if(e.pointerId !== undefined && e.pointerId !== w.pointerId) return;
+  if(e.isPrimary === false){ cancelSwipe(); return; }
+  /* Something opened on top mid-gesture — a confirmation, a sheet. That
+     surface owns the interaction now. */
+  if(topOpenSheet() !== w.ov){ cancelSwipe(); return; }
+  const dx = e.clientX - w.x0;
+  const dy = e.clientY - w.y0;
+
+  if(!w.claimed){
+    /* Vertical first, or not clearly sideways: this was a scroll, and it stays
+       one for the rest of the gesture. */
+    if(Math.abs(dy) > SWIPE_CLAIM_PX && Math.abs(dy) >= Math.abs(dx)){ _swipe = null; return; }
+    if(dx < -SWIPE_CLAIM_PX){ _swipe = null; return; }          /* leftward is not back */
+    if(dx < SWIPE_CLAIM_PX) return;
+    if(Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
+    w.claimed = true;
+    document.body.classList.add('swiping');
+    w.sheet.style.transition = 'none';
+    w.sheet.style.willChange = 'transform';
+  }
+
+  const now = Date.now();
+  const dt = Math.max(1, now - w.lastT);
+  w.vx = (e.clientX - w.lastX) / dt;
+  w.lastX = e.clientX; w.lastT = now;
+
+  /* Never leftward, and damped under Reduce Motion so the gesture and its
+     outcome survive while the travel does not. */
+  w.dx = Math.max(0, w.reduced ? dx * 0.25 : dx);
+  w.sheet.style.transform = 'translate3d(' + w.dx.toFixed(1) + 'px,0,0)';
+  try{ e.preventDefault(); }catch(err){}
+}
+
+function onSwipeUp(e){
+  const w = _swipe;
+  if(!w) return;
+  /* An unrelated pointer lifting must not commit this gesture. */
+  if(e && e.pointerId !== undefined && e.pointerId !== w.pointerId) return;
+  if(!w.claimed){ _swipe = null; return; }
+  /* The page it started on is no longer the one in front. */
+  if(w.session !== _pageSession || topOpenSheet() !== w.ov){ cancelSwipe(); return; }
+
+  const travelled = w.reduced ? w.dx * 4 : w.dx;
+  const far = travelled > w.width * SWIPE_COMPLETE;
+  const flick = w.vx > SWIPE_VELOCITY && travelled > w.width * SWIPE_FLICK_MIN;
+  const commit = far || flick;
+  if(!commit){ settleSwipe(false); return; }
+
+  /* Ask the exit policy BEFORE animating away. A page that slides out and
+     then springs back because a confirmation appeared is a page that lied
+     about what the gesture did. */
+  const closer = sheetCloser(w.ov);
+  if(w.ov.id === 'itemFormOverlay' && formIsDirtyEdit()){
+    settleSwipe(false);
+    if(closer) try{ closer(); }catch(e){}     /* raises the confirmation */
+    return;
+  }
+  settleSwipe(true, closer);
+}
+
+function settleSwipe(commit, closer){
+  const w = _swipe;
+  if(!w) return;
+  _swipe = null;
+  abortSettle();                       /* never two settlements at once */
+
+  const sheet = w.sheet;
+  const ov = w.ov;
+  const session = w.session;
+
+  const finish = () => {
+    _settling = null;
+    sheet.style.transition = '';
+    sheet.style.transform = '';
+    sheet.style.willChange = '';
+    try{ document.body.classList.remove('swiping'); }catch(e){}
+    if(!commit || !closer) return;
+    /* THE CHECK THIS EXISTS FOR: between the release and this callback the
+       surface can have been closed and reopened for a different task. Closing
+       whatever happens to be in front now would shut a page nobody swiped. */
+    if(session !== _pageSession) return;
+    if(!ov.classList || !ov.classList.contains('open')) return;
+    if(topOpenSheet() !== ov) return;
+    try{ closer(); }catch(e){}
+  };
+
+  if(w.reduced){ finish(); return; }
+  sheet.style.transition = 'transform var(--dur) var(--ease)';
+  sheet.style.transform = commit ? 'translate3d(100%,0,0)' : 'translate3d(0,0,0)';
+  /* A timer rather than transitionend: an interrupted transition never fires
+     the event, and a page left mid-slide with a transform on it is stuck. */
+  _settling = { sheet: sheet, ov: ov, session: session, timer: null };
+  _settling.timer = setTimeout(finish, commit ? 200 : 180);
+}
+
+function cancelSwipe(){
+  /* A rotation or a switch away between the release and the completion has to
+     invalidate the pending close too, not just a live gesture. */
+  if(!_swipe){ abortSettle(); return; }
+  if(!_swipe.claimed){ _swipe = null; abortSettle(); return; }
+  settleSwipe(false);
+}
+
+function wireSwipeBack(){
+  try{
+    document.addEventListener('pointerdown', onSwipeDown);
+    document.addEventListener('pointermove', onSwipeMove, { passive: false });
+    document.addEventListener('pointerup', onSwipeUp);
+    document.addEventListener('pointercancel', cancelSwipe);
+    /* Deterministic on every interruption: a rotation, a call, a switch to
+       another app. Each leaves the page where it started rather than part-way. */
+    window.addEventListener('orientationchange', cancelSwipe);
+    window.addEventListener('resize', cancelSwipe);
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState !== 'visible') cancelSwipe();
+    });
+  }catch(e){}
+}
+
 function wireDrag(){
   try{
     document.addEventListener('pointerdown', onTimelinePointerDown);
@@ -5571,25 +6064,52 @@ let quickScheduled = false;
 
 function openQuickAdd(civil){
   quickAddDate = isCivil(civil) ? civil : null;
+  /* A half-typed capture is picked up where it was left. This used to start
+     blank every time, which threw away whatever had been typed before the
+     sheet was dismissed. */
+  Form = formDraftLoad() || formBlank(quickAddDate);
+  Form.id = null;
+  if(quickAddDate && !Form.restored) Form.date = quickAddDate;
+  formView = 'quick';
+
   const title = document.getElementById('quickTitle');
   const err = document.getElementById('quickTitleError');
-  if(title){ title.value = ''; title.classList.remove('field-error'); title.setAttribute('aria-invalid', 'false'); }
+  if(title){
+    title.value = Form.title || '';
+    title.classList.remove('field-error');
+    title.setAttribute('aria-invalid', 'false');
+  }
   if(err) err.textContent = '';
 
   /* Off by default: capture is one field. The same two controls the full form
      uses appear the moment a time is wanted — the vocabulary is identical,
      only the amount of it on screen differs. */
-  quickScheduled = false;
-  ctlInit('quickTime', 'time', nextQuarterHour(), { label: 'Starts' });
-  ctlInit('quickDur', 'duration', prefs.defaultDuration, { label: 'Takes' });
+  quickScheduled = !!Form.scheduled;
+  quickTagId = Form.tagId || null;
+  ctlPair('quickTime', 'quickDur', {
+    start: Form.start === null || Form.start === undefined ? nextQuarterHour() : Form.start,
+    duration: Form.duration || prefs.defaultDuration
+  });
   paintQuickSchedule();
   renderQuickTags();
   openOverlay('quickAddOverlay');
 }
 
+/* Compact to expanded, carrying everything and creating nothing. Both views
+   edit the same object, so there is no copying step that could drop a value. */
+function expandQuickAdd(){
+  formPull();
+  const carried = Form;
+  const day = quickAddDate;
+  closeOverlay('quickAddOverlay');
+  formView = null;
+  openItemForm(null, day, undefined, carried);
+}
+
 function toggleQuickSchedule(){
   quickScheduled = !quickScheduled;
   paintQuickSchedule();
+  scheduleDraftSave();
 }
 
 function paintQuickSchedule(){
@@ -5603,7 +6123,15 @@ function paintQuickSchedule(){
   const f = document.getElementById('quickSchedFields');
   if(f) f.innerHTML = quickScheduled ? ctlHtml('quickTime') + ctlHtml('quickDur') : '';
 }
-function closeQuickAdd(){ closeOverlay('quickAddOverlay'); }
+function closeQuickAdd(){
+  /* Written synchronously on the way out, so dismissing the sheet keeps what
+     was typed rather than racing a debounce that the close would outlive. */
+  const hadContent = !!(Form && (getValue('quickTitle') || Form.notes));
+  const ok = flushDraft();
+  if(hadContent) reportDraftLoss(ok);
+  closeOverlay('quickAddOverlay');
+  Form = null; formView = null;
+}
 
 let quickTagId = null;
 function renderQuickTags(){
@@ -5621,47 +6149,40 @@ function renderQuickTags(){
 function setQuickTag(id){
   quickTagId = quickTagId === id ? null : id;
   renderQuickTags();
+  scheduleDraftSave();
 }
 
 function saveQuickAdd(){
   const titleEl = document.getElementById('quickTitle');
   const errEl = document.getElementById('quickTitleError');
-  const title = titleEl ? String(titleEl.value || '').trim() : '';
 
-  /* Validate before mutating anything. */
-  if(!title){
-    if(titleEl){ titleEl.classList.add('field-error'); titleEl.setAttribute('aria-invalid', 'true'); }
-    if(errEl) errEl.textContent = 'Give it a name so you recognise it later.';
+  formPull();
+  const suggestion = Form.tagId ? null : suggestTagFor(Form.title);
+  if(suggestion) Form.tagId = suggestion.id;
+
+  const res = formCommit();
+  if(!res.ok){
+    if(res.storage){
+      toast('That could not be saved on this device, so it was not added.', 'error');
+      return;
+    }
+    if(titleEl && res.why && res.why.field === 'title'){
+      titleEl.classList.add('field-error');
+      titleEl.setAttribute('aria-invalid', 'true');
+    }
+    if(errEl && res.why && res.why.message) errEl.textContent = res.why.message;
     return;
   }
-  /* A slider cannot produce an unreadable time, so there is nothing to reject
-     here any more — the switch alone says whether this has one. */
-  const minute = quickScheduled ? ctlValue('quickTime') : null;
-  const date = quickScheduled ? (quickAddDate || todayCivil()) : null;
-  const suggestion = suggestTagFor(title);
-  const item = normalizeItem({
-    kind: 'task',
-    title: title,
-    tagId: quickTagId || (suggestion ? suggestion.id : null),
-    date: date,
-    start: minute,
-    duration: quickScheduled ? ctlValue('quickDur') : prefs.defaultDuration,
-    reminders: minute !== null && prefs.defaultReminder >= 0 ? [prefs.defaultReminder] : []
-  });
-  if(!item) return;
 
-  items.push(item);
-  if(!persistItems()){
-    items = items.filter(i => i.id !== item.id);
-    toast('That could not be saved on this device, so it was not added.', 'error');
-    return;
-  }
+  const placed = res.item.date !== null && res.item.start !== null;
+  const at = res.item.start;
   quickTagId = null;
-  closeQuickAdd();
+  closeOverlay('quickAddOverlay');
+  Form = null; formView = null;
   renderAll();
   syncReminderState();
-  toast(date ? 'Added at ' + formatMinute(minute) : 'Added to your inbox', 'success');
-  if(suggestion && !quickTagId) offerTagSuggestion(item.id, suggestion);
+  toast(placed ? 'Added at ' + formatMinute(at) : 'Added to your inbox', 'success');
+  if(suggestion) offerTagSuggestion(res.item.id, suggestion);
 }
 
 /* A suggestion, never an assignment. It is applied only if the person taps it,
@@ -5691,25 +6212,274 @@ function applySuggestedTag(itemId, tagId){
    a disclosure. Create and edit are the same page, because they
    are the same task with a different starting value.
    ========================================================= */
+/* =========================================================
+   THE FORM MODEL — one owner, two views
+   ---------------------------------------------------------
+   THREE DEFECTS SHARED ONE CAUSE. Quick capture cleared a typed
+   title because it had no draft at all; the full form lost priority
+   and deadline because flushDraft() wrote a HAND-LISTED subset of
+   the fields and those two were added later; and a saved record
+   came back as a draft because the debounce timer was never
+   cancelled and fired after the save had already cleared it.
+
+   All three were the same problem: the values being edited had no
+   single owner. There were DOM elements, a CTL registry, a handful
+   of module variables, and a fourth hand-written list inside the
+   draft serialiser — four places that had to agree and did not.
+
+   Now there is one object. FORM_FIELDS declares what a form holds;
+   snapshot, restore, draft and save all read that declaration, so a
+   field added to it is drafted, restored and saved without anyone
+   remembering to add it anywhere else.
+
+   The compact sheet and the full page are two VIEWS of this one
+   object, which is also why "More options" can carry a half-typed
+   capture into the full form without creating a record: there is
+   nothing to carry across, because both views were already editing
+   the same thing.
+   ========================================================= */
+const FORM_FIELDS = ['kind', 'title', 'notes', 'tagId', 'date', 'start', 'duration',
+                     'priority', 'deadline', 'earliest', 'latest',
+                     'recurrence', 'reminders', 'scheduled', 'windowed'];
+
+/* The values being edited, or null when nothing is. Its id is the record this
+   edits, and its presence is what makes something an EDIT rather than a
+   capture — an edit is never written to the draft. */
+let Form = null;
+let formView = null;          /* 'quick' | 'full' | null */
+let _draftTimer = null;
+
+function formBlank(presetDate, presetStart){
+  return {
+    id: null,
+    kind: 'task',
+    title: '',
+    notes: '',
+    tagId: null,
+    date: presetDate || null,
+    start: presetStart === undefined ? null : presetStart,
+    duration: prefs.defaultDuration,
+    priority: 1,
+    deadline: null,
+    earliest: null,
+    latest: null,
+    recurrence: null,
+    reminders: prefs.defaultReminder >= 0 ? [prefs.defaultReminder] : [],
+    scheduled: !!(presetDate && presetStart !== undefined && presetStart !== null),
+    windowed: false
+  };
+}
+
+function formFromItem(item){
+  const f = formBlank();
+  f.id = item.id;
+  FORM_FIELDS.forEach(k => { if(item[k] !== undefined) f[k] = item[k]; });
+  f.scheduled = !!(item.date && item.start !== null);
+  f.windowed = item.earliest !== null || item.latest !== null;
+  return f;
+}
+
+/* Only the declared fields, so a draft never carries a stray runtime value. */
+function formPick(f){
+  const out = {};
+  FORM_FIELDS.forEach(k => { out[k] = f[k]; });
+  return out;
+}
+
+/* ---- reading the open view back into the model ----
+   Called before every save and every draft write, so the model is current at
+   exactly the moments it matters. */
+function formPull(){
+  if(!Form) return;
+  if(formView === 'quick'){
+    Form.title = getValue('quickTitle');
+    Form.tagId = quickTagId;
+    Form.scheduled = quickScheduled;
+    Form.start = quickScheduled ? ctlValue('quickTime') : null;
+    /* The draft's own day wins over the day being viewed, for the same reason
+       the preset does not apply to it. */
+    Form.date = quickScheduled ? (Form.date || quickAddDate || todayCivil()) : null;
+    Form.duration = ctlValue('quickDur') || prefs.defaultDuration;
+  } else if(formView === 'full'){
+    Form.title = getValue('itemTitle');
+    Form.notes = getValue('itemNote');
+    Form.scheduled = formScheduled;
+    Form.date = formScheduled && isCivil(getValue('itemDate')) ? getValue('itemDate') : null;
+    Form.start = formScheduled ? ctlValue('itemTime') : null;
+    Form.duration = ctlValue('itemDur') || prefs.defaultDuration;
+    Form.deadline = isCivil(getValue('itemDeadline')) ? getValue('itemDeadline') : null;
+    Form.windowed = formWindowed;
+    Form.earliest = formWindowed ? ctlValue('itemEarliest') : null;
+    Form.latest = formWindowed ? ctlValue('itemLatest') : null;
+    Form.kind = formKind;
+    Form.tagId = formTagId;
+    Form.priority = formPriority;
+    Form.recurrence = formRepeat;
+    Form.reminders = formReminders;
+  }
+}
+
+/* ---- the draft: the model itself, not a copy of some of it ---- */
+function formDraftCancel(){
+  if(_draftTimer){ clearTimeout(_draftTimer); _draftTimer = null; }
+}
+function scheduleDraftSave(){
+  /* An edit in progress is not a draft: restoring it later would silently
+     reapply changes to a record that already exists. */
+  if(!Form || Form.id) return;   // an edit in progress is not a draft
+  formDraftCancel();
+  _draftTimer = setTimeout(flushDraft, 400);
+}
+/* Returns whether the draft is safely on disk, so a caller that is about to
+   close can tell the person if it is not. */
+function flushDraft(){
+  formDraftCancel();
+  /* Nothing open means nothing to draft. Without this the timer could fire
+     after a save or a close and write the DOM's leftovers back to storage —
+     which is exactly how a saved record came back as a ghost draft. */
+  if(!Form || Form.id) return true;
+  formPull();
+  if(!Form.title && !Form.notes){ Store.remove(KEYS.itemDraft); return true; }
+  return Store.setJSON(KEYS.itemDraft, formPick(Form));
+}
+
+/* A capture that could not be written down is the one thing that must not
+   disappear quietly. The surface still closes — that is what was asked — but
+   the person is told, rather than discovering it the next time they look. */
+function reportDraftLoss(ok){
+  if(ok) return;
+  toast('That capture could not be saved on this device, so it was not kept.', 'error');
+}
+
+/* The debounce covers typing. It cannot cover a refresh, a swipe up to the
+   home screen, or the tab being discarded — all of which can happen inside
+   the 400ms. Committing on the way out is what makes a title-only capture
+   survive those. */
+function wireDraftLifecycle(){
+  try{
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'hidden') flushDraft();
+    });
+    window.addEventListener('pagehide', () => { flushDraft(); });
+  }catch(e){}
+}
+function formDraftClear(){
+  formDraftCancel();
+  Store.remove(KEYS.itemDraft);
+}
+function formDraftLoad(){
+  const d = Store.getJSON(KEYS.itemDraft, null);
+  if(!d || typeof d !== 'object') return null;
+  const f = formBlank();
+  FORM_FIELDS.forEach(k => { if(d[k] !== undefined) f[k] = d[k]; });
+  f.recurrence = normalizeRecurrence(f.recurrence);
+  f.reminders = normalizeReminders(f.reminders);
+
+  /* A draft written by an earlier version has no scheduled/windowed flag —
+     those fields did not exist yet — but it does carry the answer in its own
+     values. Infer ONLY when the flag is absent: an explicit false in a newer
+     draft is a decision somebody made, and overwriting it would turn "no, I
+     do not want a time" back into a time.
+
+     Committed items were unaffected by that change, so the item schema being
+     unchanged says nothing about whether a stored DRAFT still loads. */
+  if(d.scheduled === undefined) f.scheduled = !!(f.date && f.start !== null);
+  if(d.windowed === undefined) f.windowed = f.earliest !== null || f.latest !== null;
+
+  /* Resumed, not new. A preset day belongs to a fresh capture; silently
+     moving a draft onto whatever day happens to be on screen would reschedule
+     something the person had already placed. Transient — never a FORM_FIELD,
+     so it is never written back out. */
+  f.restored = true;
+  return f;
+}
+
+/* ---- validation and persistence, in one place for both views ---- */
+function formValidate(){
+  if(!Form) return { ok: false };
+  if(!Form.title) return { ok: false, field: 'title',
+    message: 'Give this a name so you recognise it on your timeline.' };
+  /* The switch says this belongs on a day; the day says which. Putting it on
+     today because nobody picked one would be inventing a commitment. */
+  if(Form.scheduled && !Form.date) return { ok: false, field: 'date',
+    message: 'Pick a day as well, or turn off “Put it on a day” to keep this in your inbox.' };
+  return { ok: true };
+}
+
+/* The one path that writes a schedule item. Returns the saved record, or null
+   — and on a failed write it changes NOTHING and says so, leaving the form up
+   with everything still in it. */
+function formCommit(){
+  formPull();
+  const v = formValidate();
+  if(!v.ok) return { ok: false, why: v };
+
+  const existing = Form.id ? itemById(Form.id) : null;
+  const next = normalizeItem({
+    id: existing ? existing.id : undefined,
+    kind: Form.kind,
+    title: Form.title,
+    notes: Form.notes,
+    tagId: Form.tagId,
+    date: Form.scheduled ? Form.date : null,
+    start: Form.scheduled ? Form.start : null,
+    duration: Form.duration,
+    status: existing ? existing.status : 'open',
+    completedAt: existing ? existing.completedAt : null,
+    priority: Form.priority,
+    deadline: Form.deadline,
+    earliest: Form.windowed ? Form.earliest : null,
+    latest: Form.windowed ? Form.latest : null,
+    recurrence: Form.recurrence,
+    reminders: Form.reminders,
+    createdAt: existing ? existing.createdAt : undefined,
+    updatedAt: new Date().toISOString()
+  });
+  if(!next) return { ok: false, why: { field: 'title' } };
+
+  const snapshot = items.slice();
+  if(existing) items = items.map(i => (i.id === existing.id ? next : i));
+  else items.push(next);
+
+  if(!persistItems()){
+    items = snapshot;
+    return { ok: false, storage: true };
+  }
+  /* Cancel BEFORE clearing: a timer still armed here would fire in 400ms and
+     write the record we just saved back out as a draft. */
+  formDraftClear();
+  return { ok: true, item: next, wasEditing: !!existing };
+}
+
 let editingItemId = null;
 let formKind = 'task';
 let formTagId = null;
 let formRepeat = null;
 let formReminders = [];
-let _draftTimer = null;
 
-function openItemForm(id, presetDate, presetStart){
+function openItemForm(id, presetDate, presetStart, carried){
   editingItemId = id || null;
   const item = id ? itemById(id) : null;
 
-  const draft = !item ? Store.getJSON(KEYS.itemDraft, null) : null;
-  const src = item || draft || {};
+  /* One model, three ways in: an existing record, a capture handed over from
+     the compact sheet, or a draft left from last time. */
+  if(item)          Form = formFromItem(item);
+  else if(carried)  Form = carried;
+  else              Form = formDraftLoad() || formBlank(presetDate, presetStart);
+  Form.id = item ? item.id : null;
+  /* Same rule as the compact sheet: a preset places a NEW capture and never
+     moves a resumed one. */
+  if(!item && presetDate && !Form.restored) Form.date = presetDate;
+  if(!item && presetStart !== undefined && presetStart !== null && !Form.restored){
+    Form.start = presetStart; Form.scheduled = true;
+  }
+  formView = 'full';
+  const src = Form;
 
   formKind = ITEM_KINDS.indexOf(src.kind) === -1 ? 'task' : src.kind;
   formTagId = src.tagId || null;
   formRepeat = normalizeRecurrence(src.recurrence);
-  formReminders = normalizeReminders(src.reminders !== undefined ? src.reminders
-    : (prefs.defaultReminder >= 0 ? [prefs.defaultReminder] : []));
+  formReminders = normalizeReminders(src.reminders);
 
   setValue('itemTitle', src.title || '');
   setValue('itemNote', src.notes || '');
@@ -5717,12 +6487,14 @@ function openItemForm(id, presetDate, presetStart){
   setValue('itemDeadline', src.deadline || '');
   setFormPriority(src.priority || 1, true);
 
-  const startVal = src.start !== undefined && src.start !== null ? src.start
-    : (presetStart !== undefined && presetStart !== null ? presetStart : null);
-  formScheduled = !!(src.date || presetDate) && startVal !== null;
-  ctlInit('itemTime', 'time', startVal === null ? nextQuarterHour() : startVal, { label: 'Starts' });
-  ctlInit('itemDur', 'duration', src.duration || prefs.defaultDuration, { label: 'Takes' });
-  formWindowed = (src.earliest !== undefined && src.earliest !== null) ||
+  const startVal = src.start !== undefined && src.start !== null ? src.start : null;
+  formScheduled = !!src.scheduled && !!(src.date || presetDate);
+  ctlPair('itemTime', 'itemDur', {
+    start: startVal === null ? nextQuarterHour() : startVal,
+    duration: src.duration || prefs.defaultDuration
+  });
+  formWindowed = !!src.windowed ||
+                 (src.earliest !== undefined && src.earliest !== null) ||
                  (src.latest !== undefined && src.latest !== null);
   ctlInit('itemEarliest', 'time', src.earliest === undefined || src.earliest === null ? prefs.dayStart : src.earliest,
     { label: 'Not before' });
@@ -5744,12 +6516,64 @@ function openItemForm(id, presetDate, presetStart){
   renderFormTags();
   renderFormRepeat();
   renderFormReminders();
+  /* Taken after the view is populated, so it reflects what is on screen. */
+  formPull();
+  _formBaseline = Form.id ? JSON.stringify(formPick(Form)) : null;
+  beginPageSession();
+  pageHistoryPush();
   openOverlay('itemFormOverlay');
 }
 
+/* What the form looked like when it opened. An edit is "dirty" when it no
+   longer matches — which is the only case where leaving has to ask. */
+let _formBaseline = null;
+
+/* Synchronous, because the swipe has to know BEFORE it animates whether the
+   page is allowed to leave. A page that slides away and bounces back is worse
+   than one that never moved. */
+function formIsDirtyEdit(){
+  if(!Form || !Form.id || !_formBaseline) return false;
+  formPull();
+  return JSON.stringify(formPick(Form)) !== _formBaseline;
+}
+
+/* THE EXIT POLICY. Back, swipe, Escape and the device back gesture all come
+   through here, so they cannot drift apart:
+
+     a clean detail page      leaves
+     an unchanged form        leaves
+     a new capture            leaves, keeping its draft
+     a changed existing item  asks, because silently discarding someone's
+                              edits and silently saving them are both wrong
+*/
 function closeItemForm(){
+  if(formIsDirtyEdit()){
+    /* Back may already have spent the entry getting here. The page is staying
+       open, so put one back before asking. */
+    pageHistoryRestore();
+    confirmAction({
+      title: 'Discard your changes?',
+      message: 'This edit has not been saved. Leaving now keeps the item exactly as it was.',
+      confirmLabel: 'Discard',
+      cancelLabel: 'Keep editing',
+      destructive: true
+    }).then(yes => { if(yes) forceCloseItemForm(); });
+    return;
+  }
+  forceCloseItemForm();
+}
+
+function forceCloseItemForm(){
+  /* A capture keeps what was typed; an edit never becomes a draft. flushDraft
+     enforces both, so the close path does not have to know which this was. */
+  const hadContent = !!(Form && !Form.id && (getValue('itemTitle') || getValue('itemNote')));
+  const ok = flushDraft();
+  if(hadContent) reportDraftLoss(ok);
+  pageHistoryRelease();
   closeOverlay('itemFormOverlay');
   editingItemId = null;
+  Form = null; formView = null;
+  _formBaseline = null;
 }
 
 let formScheduled = false;
@@ -5883,100 +6707,72 @@ function toggleFormReminder(off){
 function saveItemForm(){
   const titleEl = document.getElementById('itemTitle');
   const errEl = document.getElementById('itemTitleError');
-  const title = getValue('itemTitle');
 
-  if(!title){
-    if(titleEl){ titleEl.classList.add('field-error'); titleEl.setAttribute('aria-invalid', 'true'); }
-    if(errEl) errEl.textContent = 'Give this a name so you recognise it on your timeline.';
+  const res = formCommit();
+  if(!res.ok){
+    /* A failed write leaves the form exactly as it is, with everything still
+       in it, and says what happened rather than closing on a lie. */
+    if(res.storage){
+      toast('That could not be saved on this device, so nothing was changed.', 'error');
+      return;
+    }
+    if(titleEl){
+      const bad = res.why && res.why.field === 'title';
+      titleEl.classList.toggle('field-error', bad);
+      titleEl.setAttribute('aria-invalid', bad ? 'true' : 'false');
+    }
+    if(errEl) errEl.textContent = (res.why && res.why.message) || '';
     return;
   }
   if(titleEl){ titleEl.classList.remove('field-error'); titleEl.setAttribute('aria-invalid', 'false'); }
   if(errEl) errEl.textContent = '';
 
-  const rawDate = getValue('itemDate');
-  const date = formScheduled && isCivil(rawDate) ? rawDate : null;
-  const start = formScheduled ? ctlValue('itemTime') : null;
-
-  /* The switch says this belongs on a day; the day field says which. Saving it
-     onto today because the person forgot to pick one would be inventing a
-     commitment they never made. */
-  if(formScheduled && !date){
-    if(errEl) errEl.textContent = 'Pick a day as well, or turn off “Put it on a day” to keep this in your inbox.';
-    return;
-  }
-  const duration = ctlValue('itemDur') || prefs.defaultDuration;
-  const earliest = formWindowed ? ctlValue('itemEarliest') : null;
-  const latest = formWindowed ? ctlValue('itemLatest') : null;
-  const deadline = isCivil(getValue('itemDeadline')) ? getValue('itemDeadline') : null;
-
-  const existing = editingItemId ? itemById(editingItemId) : null;
-  const shape = {
-    id: existing ? existing.id : undefined,
-    kind: formKind,
-    title: title,
-    notes: getValue('itemNote'),
-    tagId: formTagId,
-    date: date,
-    start: start,
-    duration: duration,
-    status: existing ? existing.status : 'open',
-    completedAt: existing ? existing.completedAt : null,
-    priority: formPriority,
-    deadline: deadline,
-    earliest: earliest,
-    latest: latest,
-    recurrence: formRepeat,
-    reminders: formReminders,
-    createdAt: existing ? existing.createdAt : undefined,
-    updatedAt: new Date().toISOString()
-  };
-  const next = normalizeItem(shape);
-  if(!next) return;
-
-  const snapshot = items.slice();
-  if(existing){
-    items = items.map(i => (i.id === existing.id ? next : i));
-  } else {
-    items.push(next);
-  }
-  if(!persistItems()){
-    items = snapshot;
-    toast('That could not be saved on this device, so nothing was changed.', 'error');
-    return;
-  }
-
-  Store.remove(KEYS.itemDraft);
-  const wasEditing = !!existing;
-  closeItemForm();
+  const wasEditing = res.wasEditing;
+  pageHistoryRelease();
+  closeOverlay('itemFormOverlay');
+  editingItemId = null;
+  Form = null; formView = null;
+  _formBaseline = null;
   renderAll();
   syncReminderState();
   toast(wasEditing ? 'Saved' : 'Added', 'success');
 }
 
-/* Drafts protect a half-typed NEW item only. An edit in progress is not a
-   draft: restoring it later would silently reapply changes to a record that
-   already exists, which is data loss wearing a helpful face. */
-function scheduleDraftSave(){
-  if(editingItemId) return;   // an edit in progress is not a draft
-  if(_draftTimer) clearTimeout(_draftTimer);
-  _draftTimer = setTimeout(flushDraft, 400);
-}
+/* =========================================================
+   TASK PAGE HISTORY
+   ---------------------------------------------------------
+   A task page is a destination, so the device Back gesture and the
+   browser's Back button should return from it — not leave Dayplan
+   entirely. The foundation already has the mechanism and the data
+   page already used it; the task pages simply never pushed.
 
-function flushDraft(){
-  if(editingItemId) return;
-  if(_draftTimer){ clearTimeout(_draftTimer); _draftTimer = null; }
-  const title = getValue('itemTitle');
-  const note = getValue('itemNote');
-  if(!title && !note){ Store.remove(KEYS.itemDraft); return; }
-  Store.setJSON(KEYS.itemDraft, {
-    kind: formKind, title: title, notes: note, tagId: formTagId,
-    date: formScheduled ? (getValue('itemDate') || null) : null,
-    start: formScheduled ? ctlValue('itemTime') : null,
-    duration: ctlValue('itemDur') || prefs.defaultDuration,
-    earliest: formWindowed ? ctlValue('itemEarliest') : null,
-    latest: formWindowed ? ctlValue('itemLatest') : null,
-    recurrence: formRepeat, reminders: formReminders
-  });
+   The awkward half is that a Back press CONSUMES the entry before
+   the exit policy gets a say. If the policy then declines to leave
+   — a changed edit raises a confirmation — the entry is gone and
+   the next Back would take the person out of the app. So the depth
+   at push time is remembered, and the release only fires if the
+   entry is still there. If it is not, and the page is staying, a
+   replacement is pushed.
+   ========================================================= */
+let _pageHistoryAt = 0;
+
+function pageHistoryPush(){
+  pushOverlayHistory();
+  _pageHistoryAt = _historyDepth;
+}
+/* Did a device Back already take our entry? */
+function pageHistoryTaken(){
+  return _pageHistoryAt > 0 && _historyDepth < _pageHistoryAt;
+}
+function pageHistoryRelease(){
+  /* Releasing an entry that Back already consumed would pop an unrelated one
+     and walk the person out of the app. */
+  if(_pageHistoryAt > 0 && !pageHistoryTaken()) releaseOverlayHistory();
+  _pageHistoryAt = 0;
+}
+/* The page is staying open after all, so it needs an entry again. */
+function pageHistoryRestore(){
+  if(pageHistoryTaken()) pageHistoryPush();
 }
 
 /* =========================================================
@@ -5993,12 +6789,15 @@ function openOccurrence(itemId, date){
 function openItemDetail(id){
   const item = itemById(id);
   if(!item) return;
+  beginPageSession();
+  pageHistoryPush();
   detailItemId = id;
   if(!detailDate) detailDate = item.date;
   renderItemDetail();
   openOverlay('itemDetailOverlay');
 }
 function closeItemDetail(){
+  pageHistoryRelease();
   closeOverlay('itemDetailOverlay');
   detailItemId = null; detailDate = null;
 }
@@ -6605,75 +7404,164 @@ function enableNotifications(){
    Diagnostics, which is a deliberate destination someone chooses,
    not something a person looking for dark mode has to scroll past.
    ========================================================= */
+/* =========================================================
+   SETTINGS
+   ---------------------------------------------------------
+   A LIST, not a control panel. Every adjuster used to be on this
+   one screen at once — two sliders, two number fields, a select,
+   two switches, a notice and three explanatory paragraphs — so the
+   root screen was a wall of widgets and the thing being looked for
+   was somewhere in it.
+
+   Now each row states its CURRENT VALUE and opens a focused sheet
+   when there is something to change. The root answers "what is this
+   set to" at a glance; the sheets answer "change it". Nothing was
+   removed, and diagnostics stays where it was: behind a deliberate
+   door, not on the way to the appearance setting.
+   ========================================================= */
 function renderSettings(){
   const el = document.getElementById('settingsBody');
+  if(!el) return;
+  const parts = [];
+
+  parts.push('<div class="section-label">Appearance</div><div class="list">');
+  parts.push(settingsRow('Theme', THEME_LABEL[currentTheme], 'openThemeSheet()'));
+  parts.push('</div>');
+
+  parts.push('<div class="section-label">Day</div><div class="list">');
+  parts.push(settingsRow('Your day runs',
+    formatMinute(prefs.dayStart) + ' – ' + formatMinute(prefs.dayEnd), 'openDaySheet()'));
+  parts.push(settingsRow('Default length', formatDuration(prefs.defaultDuration), 'openDaySheet()'));
+  parts.push('</div>');
+
+  parts.push('<div class="section-label">Scheduling</div><div class="list">');
+  parts.push(settingsRow('Gap between things',
+    prefs.bufferMinutes ? formatDuration(prefs.bufferMinutes) : 'None', 'openSchedulingSheet()'));
+  parts.push('</div>');
+
+  parts.push('<div class="section-label">Reminders</div><div class="list">');
+  parts.push(settingsRow('Default reminder',
+    prefs.defaultReminder >= 0 ? reminderLabel(prefs.defaultReminder) : 'None', 'openReminderSheet()'));
+  parts.push(settingsRow('Planning nudges', nudgeSummary(), 'openReminderSheet()'));
+  parts.push('</div>');
+  /* The one limitation worth carrying on the root screen, because it changes
+     what a reminder means. Everything else lives in the sheet. */
+  if(notificationCapability() !== 'granted' || !pushConfigured()){
+    parts.push('<p class="settings-note">' + escapeHtml(reminderCapabilityLine()) + '</p>');
+  }
+
+  parts.push('<div class="section-label">Tags</div><div class="list">');
+  parts.push(settingsRow('Manage tags',
+    activeTags().length + (activeTags().length === 1 ? ' tag' : ' tags'), 'openTagManager()'));
+  parts.push('</div>');
+
+  parts.push('<div class="section-label">Data</div><div class="list">');
+  parts.push(settingsRow('Export this week', 'Calendar file', 'exportWeekIcs(planDate)'));
+  parts.push(settingsRow('Share today', 'Plain text', 'shareDay(todayDate)'));
+  parts.push(settingsRow('Backup & data', 'Export, import or reset', 'openDataSettings()'));
+  parts.push('</div>');
+
+  parts.push('<div class="section-label">About</div><div class="list">');
+  parts.push(settingsRow('What’s new', 'Version ' + APP_VERSION, 'openUpdates()'));
+  parts.push(settingsRow('Replay the intro', 'The short setup', 'startOnboarding(true)'));
+  parts.push(settingsRow('Diagnostics', 'Storage and cache detail', 'openDiagnostics()'));
+  parts.push('</div>');
+
+  el.innerHTML = parts.join('');
+}
+
+function nudgeSummary(){
+  if(prefs.planMorning && prefs.planEvening) return 'Morning and evening';
+  if(prefs.planMorning) return 'Morning';
+  if(prefs.planEvening) return 'Evening';
+  return 'Off';
+}
+
+/* ---- the focused sheets ---------------------------------------
+   Each owns one group. They render on open and re-render on change,
+   so a value shown in a sheet and the summary on the root row can
+   never disagree — both read prefs. */
+function openThemeSheet(){ renderThemeSheet(); openOverlay('themeOverlay'); }
+function closeThemeSheet(){ closeOverlay('themeOverlay'); renderSettings(); }
+function renderThemeSheet(){
+  const el = document.getElementById('themeBody');
+  if(!el) return;
+  el.innerHTML =
+    '<p class="sheet-sub">System follows your device and changes with it.</p>' +
+    '<div class="segmented" role="radiogroup" aria-label="Appearance" id="themeSeg">' +
+    THEMES.map(t => '<button role="radio" aria-checked="' + (currentTheme === t ? 'true' : 'false') + '" ' +
+      'data-theme-opt="' + t + '" onclick="setTheme(\'' + t + '\');renderThemeSheet()">' +
+      THEME_LABEL[t] + '</button>').join('') + '</div>';
+}
+
+function openDaySheet(){ renderDaySheet(); openOverlay('dayOverlay'); }
+function closeDaySheet(){ closeOverlay('dayOverlay'); renderSettings(); }
+function renderDaySheet(){
+  const el = document.getElementById('dayBody');
+  if(!el) return;
+  /* The same sliders the forms use. A preference that sets a time and a form
+     that sets a time should not be two different experiences. */
+  ctlInit('setDayStart', 'time', prefs.dayStart,
+    { label: 'Day starts', onChange: v => { setPrefMinute('dayStart', v); ctlPaint('setDayEnd'); } });
+  ctlInit('setDayEnd', 'time', prefs.dayEnd,
+    { label: 'Day ends', onChange: v => { setPrefMinute('dayEnd', v); ctlPaint('setDayStart'); } });
+  ctlInit('setDuration', 'duration', prefs.defaultDuration,
+    { label: 'Default length', onChange: v => setPrefValue('defaultDuration', v) });
+  el.innerHTML =
+    '<p class="sheet-sub">The window your timeline draws, and how long a new thing is assumed to take.</p>' +
+    ctlHtml('setDayStart') + ctlHtml('setDayEnd') + ctlHtml('setDuration');
+}
+
+function openSchedulingSheet(){ renderSchedulingSheet(); openOverlay('schedulingOverlay'); }
+function closeSchedulingSheet(){ closeOverlay('schedulingOverlay'); renderSettings(); }
+function renderSchedulingSheet(){
+  const el = document.getElementById('schedulingBody');
+  if(!el) return;
+  ctlInit('setBuffer', 'duration', prefs.bufferMinutes || 0,
+    { label: 'Gap between things', min: 0, max: 60,
+      onChange: v => setPrefValue('bufferMinutes', v) });
+  el.innerHTML =
+    '<p class="sheet-sub">Auto Plan keeps this much space around fixed commitments.</p>' +
+    ctlHtml('setBuffer');
+}
+
+function openReminderSheet(){ renderReminderSheet(); openOverlay('reminderOverlay'); }
+function closeReminderSheet(){ closeOverlay('reminderOverlay'); renderSettings(); }
+function renderReminderSheet(){
+  const el = document.getElementById('reminderBody');
   if(!el) return;
   const cap = notificationCapability();
   const parts = [];
 
-  parts.push('<div class="section-label">Appearance</div>');
-  parts.push('<div class="segmented" role="radiogroup" aria-label="Appearance" id="themeSeg">' +
-    THEMES.map(t => '<button role="radio" aria-checked="' + (currentTheme === t ? 'true' : 'false') + '" ' +
-      'data-theme-opt="' + t + '" onclick="setTheme(\'' + t + '\')">' + THEME_LABEL[t] + '</button>').join('') +
-    '</div>');
-
-  parts.push('<div class="section-label">Your day</div>');
-  /* The same slider the forms use. A preference that sets a time and a form
-     that sets a time should not be two different experiences. */
-  ctlInit('setDayStart', 'time', prefs.dayStart, { label: 'Day starts', onChange: v => setPrefMinute('dayStart', v) });
-  ctlInit('setDayEnd', 'time', prefs.dayEnd, { label: 'Day ends', onChange: v => setPrefMinute('dayEnd', v) });
-  parts.push(ctlHtml('setDayStart'));
-  parts.push(ctlHtml('setDayEnd'));
-  parts.push('<div class="setting-row"><label for="setDuration">Default length</label>' +
-    '<input type="number" id="setDuration" min="15" max="480" step="5" value="' + prefs.defaultDuration +
-    '" onchange="setPref(\'defaultDuration\', this.value)"></div>');
-  parts.push('<div class="setting-row"><label for="setBuffer">Gap between things</label>' +
-    '<input type="number" id="setBuffer" min="0" max="60" step="5" value="' + prefs.bufferMinutes +
-    '" onchange="setPref(\'bufferMinutes\', this.value)"></div>');
-  parts.push('<p class="field-hint">Auto Plan keeps this much space around fixed commitments.</p>');
-
-  parts.push('<div class="section-label">Reminders</div>');
   parts.push('<div class="notice' + (cap === 'granted' ? '' : ' notice-warning') + '">' +
-    '<span aria-hidden="true">' + bellIcon(17) + '</span><span>' + escapeHtml(reminderCapabilityLine()) + '</span></div>');
+    '<span aria-hidden="true">' + bellIcon(17) + '</span><span>' +
+    escapeHtml(reminderCapabilityLine()) + '</span></div>');
   if(cap === 'default'){
-    parts.push('<button type="button" class="btn-primary btn-block" onclick="enableNotifications()">Turn on notifications</button>');
+    parts.push('<button type="button" class="btn-primary btn-block" ' +
+      'onclick="enableNotifications();renderReminderSheet()">Turn on notifications</button>');
   }
   if(cap === 'denied'){
-    parts.push('<p class="field-hint">To change this, open your browser’s settings for this site and allow notifications. ' +
-      'Dayplan cannot ask again once it has been blocked.</p>');
+    parts.push('<p class="field-hint">To change this, open your browser’s settings for this site and ' +
+      'allow notifications. Dayplan cannot ask again once it has been blocked.</p>');
   }
-  parts.push('<div class="setting-row"><label for="setDefaultReminder">Default reminder</label>' +
-    '<select id="setDefaultReminder" onchange="setPref(\'defaultReminder\', this.value)">' +
-    '<option value="-1"' + (prefs.defaultReminder < 0 ? ' selected' : '') + '>None</option>' +
-    REMINDER_OFFSETS.map(o => '<option value="' + o + '"' + (prefs.defaultReminder === o ? ' selected' : '') + '>' +
-      escapeHtml(reminderLabel(o)) + '</option>').join('') + '</select></div>');
 
-  parts.push('<div class="setting-row setting-toggle"><span><span class="setting-title">Morning planning nudge</span>' +
+  parts.push('<span class="form-label" id="defReminderLabel">Default reminder</span>');
+  parts.push('<div class="tagrow" role="group" aria-labelledby="defReminderLabel">' +
+    '<button type="button" class="chip' + (prefs.defaultReminder < 0 ? ' is-on' : '') + '" ' +
+      'aria-pressed="' + (prefs.defaultReminder < 0 ? 'true' : 'false') + '" ' +
+      'onclick="setPrefValue(\'defaultReminder\',-1);renderReminderSheet()">None</button>' +
+    REMINDER_OFFSETS.map(o => '<button type="button" class="chip' +
+      (prefs.defaultReminder === o ? ' is-on' : '') + '" ' +
+      'aria-pressed="' + (prefs.defaultReminder === o ? 'true' : 'false') + '" ' +
+      'onclick="setPrefValue(\'defaultReminder\',' + o + ');renderReminderSheet()">' +
+      escapeHtml(reminderLabel(o)) + '</button>').join('') + '</div>');
+
+  parts.push('<div class="setting-row setting-toggle"><span><span class="setting-title">Morning nudge</span>' +
     '<span class="setting-desc">A reminder to look at the day ahead</span></span>' +
     toggleMarkup('planMorning', prefs.planMorning) + '</div>');
-  parts.push('<div class="setting-row setting-toggle"><span><span class="setting-title">Evening review nudge</span>' +
+  parts.push('<div class="setting-row setting-toggle"><span><span class="setting-title">Evening nudge</span>' +
     '<span class="setting-desc">A reminder to check tomorrow before bed</span></span>' +
     toggleMarkup('planEvening', prefs.planEvening) + '</div>');
-  if((prefs.planMorning || prefs.planEvening) && !pushConfigured()){
-    parts.push('<div class="notice notice-warning"><span aria-hidden="true">' + warnIcon(17) + '</span>' +
-      '<span>These only arrive while Dayplan is open, because background delivery is not set up yet.</span></div>');
-  }
-
-  parts.push('<div class="section-label">Organise</div><div class="list">');
-  parts.push(settingsRow('Tags', 'Colours, icons and what you filter by', 'openTagManager()'));
-  parts.push('</div>');
-
-  parts.push('<div class="section-label">Your plan</div><div class="list">');
-  parts.push(settingsRow('Export this week', 'A calendar file for any other app', 'exportWeekIcs(planDate)'));
-  parts.push(settingsRow('Share today', 'Send the day as plain text', 'shareDay(todayDate)'));
-  parts.push(settingsRow('Backup & data', 'Export, import, or reset what this app has stored', 'openDataSettings()'));
-  parts.push('</div>');
-
-  parts.push('<div class="section-label">About</div><div class="list">');
-  parts.push(settingsRow('What’s new', 'Every release, most recent first', 'openUpdates()'));
-  parts.push(settingsRow('Replay the intro', 'The short setup from your first launch', 'startOnboarding(true)'));
-  parts.push(settingsRow('Diagnostics', 'Version, storage and cache details', 'openDiagnostics()'));
-  parts.push('</div>');
 
   el.innerHTML = parts.join('');
 }
@@ -6689,6 +7577,15 @@ function toggleMarkup(key, on){
   return '<button type="button" role="switch" class="switch' + (on ? ' is-on' : '') + '" ' +
     'aria-checked="' + (on ? 'true' : 'false') + '" ' +
     'onclick="togglePref(\'' + key + '\')"><span class="switch-knob" aria-hidden="true"></span></button>';
+}
+
+/* A plain numeric preference, committed as the control moves. */
+function setPrefValue(key, value){
+  const next = Object.assign({}, prefs);
+  next[key] = value;
+  prefs = normalizePrefs(next);
+  if(!persistPrefs()) toast('That could not be saved on this device.', 'error');
+  renderAll();
 }
 
 /* Committed straight from the slider, so dragging the day's end past its start
@@ -6731,6 +7628,8 @@ function togglePref(key){
   prefs[key] = !prefs[key];
   if(!persistPrefs()){ prefs[key] = !prefs[key]; toast('That could not be saved.', 'error'); return; }
   if(prefs[key] && notificationCapability() === 'default') requestNotificationPermission();
+  if(document.getElementById('reminderOverlay') &&
+     document.getElementById('reminderOverlay').classList.contains('open')) renderReminderSheet();
   renderSettings();
 }
 
@@ -6881,6 +7780,8 @@ Domain.wire = function(){
   applyTheme();
   watchSystemTheme();
   wireDrag();
+  wireSwipeBack();
+  wireDraftLifecycle();
   wireTabLanding();
   /* Deferred to load. A browser restores the previous scroll position of its
      own accord as the page finishes loading, and it does so AFTER boot runs —
@@ -6894,7 +7795,10 @@ Domain.wire = function(){
 
   /* Draft capture on the full form. Bound once, at boot, to fields that exist
      in the static markup. */
-  ['itemTitle', 'itemNote', 'itemDate', 'itemDeadline'].forEach(id => {
+  /* quickTitle was missing, so a capture that was only ever a title — which
+     is the whole point of quick capture — never scheduled a draft write at
+     all. It survived a deliberate close and nothing else. */
+  ['quickTitle', 'itemTitle', 'itemNote', 'itemDate', 'itemDeadline'].forEach(id => {
     const el = document.getElementById(id);
     if(el && el.addEventListener) el.addEventListener('input', scheduleDraftSave);
   });
@@ -6969,9 +7873,36 @@ function repaintNowRail(){
       if(label) label.textContent = formatMinute(m);
     }
   });
-  /* The focus line says "12 min left", which is only true for a minute. */
-  const focusHost = document.getElementById('todayBody');
-  if(focusHost && todayDate === todayCivil()) renderToday();
+  /* "12 min left" is only true for a minute, so the bar is repainted — but
+     only its TEXT. Re-rendering Today here replaced the whole subtree every
+     thirty seconds: it discarded the reading position, could swap markup out
+     from under a finger, and would fight a page transition. */
+  paintContextBar();
+  refreshRunningBlock();
+}
+
+/* The marker was assigned once, while a block was being drawn, and the clock
+   no longer redraws anything — so at the moment one activity ended and the
+   next began, the ring stayed on the finished one. This moves it, touching
+   two class lists and nothing else: no node is replaced, no scroll position
+   is lost, and anything being dragged or edited is untouched. */
+function refreshRunningBlock(){
+  ['todayTimeline', 'planTimeline'].forEach(id => {
+    const tl = document.getElementById(id);
+    if(!tl || !tl.querySelectorAll) return;
+    const civil = tl.getAttribute('data-date');
+    let key = null;
+    if(civil === todayCivil()){
+      const m = nowMinute();
+      const running = timedOccurrences(occurrencesForDate(civil))
+        .filter(o => occurrenceIsRunning(o, m))[0];
+      key = running ? running.key : null;
+    }
+    tl.querySelectorAll('.blk').forEach(el => {
+      const isRunning = !!key && el.getAttribute('data-key') === key;
+      if(el.classList) el.classList.toggle('blk-now', isRunning);
+    });
+  });
 }
 
 /* =========================================================

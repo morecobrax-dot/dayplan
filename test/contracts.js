@@ -32,6 +32,17 @@ function open(app, id){ app.ctx.openOverlay(id); app.ctx.__flush(); }
 function close(app, id){ app.ctx.closeOverlay(id); app.ctx.__flush(); }
 function css(){ return H.styleBlock(H.readApp()); }
 function js(){ return H.mainScript(H.readApp()); }
+/* The shipped MARKUP, with the script block removed.
+
+   bodyBlock() runs from <body> to </body>, and the entire application script
+   sits inside it — so a contract about markup that reads bodyBlock() also
+   reads every comment explaining why the markup is the way it is. Three
+   contracts have now failed on their own documentation. Rules about markup
+   read this; rules about code read stripComments(js()). */
+function markup(){
+  return H.bodyBlock(H.readApp()).replace(/<script>[\s\S]*?<\/script>/g, '');
+}
+
 /* Comments explain the rules; they must not be mistaken for breaking them. */
 function stripComments(s){
   return s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -614,8 +625,141 @@ function testForms(){
   restored.ctx.openItemForm(); restored.ctx.__flush();
   T('reopening the form restores it',
     restored.dom.document.getElementById('itemTitle').value === 'Half typed');
-  T('editing an existing record never writes a draft',
-    /if\(editingItemId\) return;\s*\/\/ an edit in progress is not a draft/.test(js()));
+  T('editing an existing record never writes a draft', (() => {
+    const a4 = H.loadApp();
+    const c4 = a4.ctx, d4 = a4.dom.document;
+    c4.openItemForm(); c4.__flush();
+    d4.getElementById('itemTitle').value = 'A capture';
+    c4.flushDraft();
+    const captured = c4.Store.getJSON(c4.KEYS.itemDraft, null);
+    c4.saveItemForm(); c4.__flush();
+    const id = c4.items[c4.items.length - 1].id;
+    c4.openItemForm(id); c4.__flush();
+    d4.getElementById('itemTitle').value = 'Edited, not drafted';
+    c4.flushDraft();
+    const afterEdit = c4.Store.getJSON(c4.KEYS.itemDraft, null);
+    return !!captured && afterEdit === null;
+  })());
+
+  sub('a half-typed capture survives being dismissed');
+  /* THE DEFECT THIS PREVENTS, reported from a real iPhone: typing a title into
+     quick capture and dismissing the sheet threw the title away. Capture had
+     no draft of its own — only the full form did. */
+  {
+    const shared2 = new Map();
+    const a5 = H.loadApp({ sharedStorage: shared2 });
+    const c5 = a5.ctx, d5 = a5.dom.document;
+    c5.openQuickAdd(null); c5.__flush();
+    d5.getElementById('quickTitle').value = 'Half typed thought';
+    c5.closeQuickAdd(); c5.__flush();
+    c5.openQuickAdd(null); c5.__flush();
+    T('the title is still there', d5.getElementById('quickTitle').value === 'Half typed thought',
+      d5.getElementById('quickTitle').value);
+    T('and it survives a reload too', (() => {
+      const back = H.loadApp({ sharedStorage: shared2 });
+      back.ctx.openQuickAdd(null); back.ctx.__flush();
+      return back.dom.document.getElementById('quickTitle').value === 'Half typed thought';
+    })());
+    T('dismissing a capture creates no record', c5.items.length === 0, String(c5.items.length));
+  }
+
+  sub('every supported field is drafted, not a hand-picked subset');
+  /* THE DEFECT THIS PREVENTS: priority and deadline were added to the form
+     after the draft serialiser was written, and nobody added them to its
+     hand-maintained list. The draft is now the form model itself, so a field
+     that exists is a field that is drafted. */
+  {
+    const shared3 = new Map();
+    const a6 = H.loadApp({ sharedStorage: shared3 });
+    const c6 = a6.ctx, d6 = a6.dom.document;
+    c6.openItemForm(); c6.__flush();
+    d6.getElementById('itemTitle').value = 'Everything';
+    d6.getElementById('itemNote').value = 'A note';
+    d6.getElementById('itemDeadline').value = '2026-10-01';
+    c6.setFormPriority(3);
+    c6.setFormKind('event');
+    c6.setFormTag('tag_work');
+    c6.toggleFormReminder(30);
+    c6.flushDraft();
+    const draft = c6.Store.getJSON(c6.KEYS.itemDraft, null);
+    T('the draft carries every declared field',
+      c6.FORM_FIELDS.every(k => Object.prototype.hasOwnProperty.call(draft, k)),
+      c6.FORM_FIELDS.filter(k => !Object.prototype.hasOwnProperty.call(draft, k)).join(','));
+    T('priority among them', draft.priority === 3, String(draft.priority));
+    T('and deadline', draft.deadline === '2026-10-01', String(draft.deadline));
+
+    c6.closeItemForm(); c6.__flush();
+    const back2 = H.loadApp({ sharedStorage: shared3 });
+    back2.ctx.openItemForm(); back2.ctx.__flush();
+    T('priority comes back', back2.ctx.formPriority === 3, String(back2.ctx.formPriority));
+    T('deadline comes back',
+      back2.dom.document.getElementById('itemDeadline').value === '2026-10-01',
+      back2.dom.document.getElementById('itemDeadline').value);
+    T('kind comes back', back2.ctx.formKind === 'event', back2.ctx.formKind);
+    T('the tag comes back', back2.ctx.formTagId === 'tag_work', String(back2.ctx.formTagId));
+    T('reminders come back', back2.ctx.formReminders.indexOf(30) !== -1,
+      back2.ctx.formReminders.join(','));
+  }
+
+  sub('a saved record never comes back as a ghost draft');
+  /* THE DEFECT THIS PREVENTS: the 400ms debounce was never cancelled, so it
+     fired AFTER the save had cleared the draft and wrote the record straight
+     back out again — and the next capture opened holding the thing that had
+     just been filed. */
+  {
+    const a7 = H.loadApp();
+    const c7 = a7.ctx, d7 = a7.dom.document;
+    c7.openItemForm(); c7.__flush();
+    d7.getElementById('itemTitle').value = 'Saved thing';
+    c7.scheduleDraftSave();
+    c7.saveItemForm(); c7.__flush();
+    T('the draft is gone the moment it is saved',
+      c7.Store.get(c7.KEYS.itemDraft) === null);
+    T('the pending timer was cancelled, not merely outrun',
+      c7._draftTimer === null, String(c7._draftTimer));
+    T('exactly one record exists', c7.items.length === 1, String(c7.items.length));
+    T('and closing with nothing open writes nothing', (() => {
+      c7.flushDraft();
+      return c7.Store.get(c7.KEYS.itemDraft) === null;
+    })());
+  }
+
+  sub('the compact sheet hands everything to the full form without saving');
+  {
+    const a8 = H.loadApp();
+    const c8 = a8.ctx, d8 = a8.dom.document;
+    c8.openQuickAdd('2026-09-11'); c8.__flush();
+    d8.getElementById('quickTitle').value = 'Carried across';
+    c8.setQuickTag('tag_focus');
+    c8.toggleQuickSchedule();
+    c8.expandQuickAdd(); c8.__flush();
+    T('the full form is open', d8.getElementById('itemFormOverlay').classList.contains('open'));
+    T('the compact sheet is closed', !d8.getElementById('quickAddOverlay').classList.contains('open'));
+    T('the title came with it', d8.getElementById('itemTitle').value === 'Carried across',
+      d8.getElementById('itemTitle').value);
+    T('so did the tag', c8.formTagId === 'tag_focus', String(c8.formTagId));
+    T('and the day it was captured on', d8.getElementById('itemDate').value === '2026-09-11',
+      d8.getElementById('itemDate').value);
+    T('no record was created on the way', c8.items.length === 0, String(c8.items.length));
+  }
+
+  sub('a failed write keeps the form and says so');
+  {
+    /* A real mid-session write failure is setJSON returning false — quota
+       exhausted after the probe already succeeded. loadApp({failWrites}) makes
+       the PROBE fail instead, and the adapter then correctly falls back to
+       memory and reports success, which is a different situation. */
+    const a9 = H.loadApp();
+    a9.ctx.Store.setJSON = function(){ return false; };
+    const c9 = a9.ctx, d9 = a9.dom.document;
+    c9.openItemForm(); c9.__flush();
+    d9.getElementById('itemTitle').value = 'Cannot land';
+    c9.saveItemForm(); c9.__flush();
+    T('the form is still open', d9.getElementById('itemFormOverlay').classList.contains('open'));
+    T('the typed title is still in it', d9.getElementById('itemTitle').value === 'Cannot land');
+    T('and nothing was added to the collection', c9.items.length === 0, String(c9.items.length));
+  }
+
 
   sub('saving clears the draft');
   d.getElementById('itemTitle').value = 'Second thing';
@@ -2082,11 +2226,12 @@ function testTheme(){
       ['--text', '--surface'], ['--text-dim', '--surface'], ['--text-faint', '--surface'],
       ['--accent', '--bg'], ['--now-line', '--bg'],
       ['--success', '--surface'], ['--warning', '--surface'], ['--danger', '--surface'],
-      /* The accent has two stops for a reason: --accent is bright enough to be
-         READ on the ground, --accent-fill is dark enough to carry white. Text
-         never sits on --accent, so checking that pair would be measuring a
-         combination the product does not draw. */
-      ['--accent-contrast', '--accent-fill'], ['--accent-contrast', '--accent-deep']
+      /* The accent has three stops for a reason: --accent is bright enough to
+         be READ on the ground, --accent-fill is the exact brand orange used
+         for fills, and --accent-hi opens the gradient. Text never sits on
+         --accent, so checking that pair would measure a combination the
+         product does not draw; it DOES sit on both gradient stops. */
+      ['--accent-contrast', '--accent-fill'], ['--accent-contrast', '--accent-hi']
     ];
     [['dark', darkMap], ['light', lightMap]].forEach(entry => {
       const label = entry[0], map = entry[1];
@@ -2134,10 +2279,39 @@ function testTheme(){
   {
     const a3 = H.loadApp();
     const c3 = a3.ctx;
-    ['quickTime', 'itemTime', 'itemEarliest', 'itemLatest', 'setDayStart', 'setDayEnd', 'obStart', 'obEnd']
-      .forEach(id => T('“' + id + '” is a slider', new RegExp("ctlInit\\('" + id + "'").test(js())));
-    ['quickDur', 'itemDur'].forEach(id =>
-      T('“' + id + '” is a slider', new RegExp("ctlInit\\('" + id + "'").test(js())));
+    /* Behavioural, not a source scan. What matters is that the control EXISTS
+       with the right kind once its surface is open — not how it was spelled at
+       the call site. A helper that binds a start and a duration together used
+       to fail this while being strictly more correct than what it replaced. */
+    function ctlIs(ctx, id, kind){
+      const ctl = ctx.CTL[id];
+      T(id + ' is a ' + kind + ' slider', !!ctl && ctl.kind === kind, String(ctl && ctl.kind));
+    }
+    c3.openQuickAdd(null); c3.__flush();
+    ctlIs(c3, 'quickTime', 'time'); ctlIs(c3, 'quickDur', 'duration');
+    c3.closeQuickAdd(); c3.__flush();
+    c3.openItemForm(); c3.__flush();
+    ctlIs(c3, 'itemTime', 'time'); ctlIs(c3, 'itemDur', 'duration');
+    ctlIs(c3, 'itemEarliest', 'time'); ctlIs(c3, 'itemLatest', 'time');
+    c3.closeItemForm(); c3.__flush();
+    /* The day adjusters live in their own sheet now — the settings root is a
+       list of values, not a panel of controls. */
+    c3.renderSettings();
+    c3.openDaySheet(); c3.__flush();
+    ctlIs(c3, 'setDayStart', 'time'); ctlIs(c3, 'setDayEnd', 'time');
+    ctlIs(c3, 'setDuration', 'duration');
+    c3.closeDaySheet(); c3.__flush();
+    c3.openSchedulingSheet(); c3.__flush();
+    ctlIs(c3, 'setBuffer', 'duration');
+    c3.closeSchedulingSheet(); c3.__flush();
+    c3.startOnboarding(false); c3.__flush();
+    ctlIs(c3, 'obStart', 'time'); ctlIs(c3, 'obEnd', 'time');
+    c3.closeOnboarding(); c3.__flush();
+
+    /* The reason the sliders exist: a native time input renders as a tiny
+       unreadable pill on iOS and collided with the field beside it. */
+    T('no native time input survives in the markup',
+      !/type="time"/.test(markup()));
     c3.ctlInit('probe', 'time', 600, { label: 'Probe' });
     const html = c3.ctlHtml('probe');
     T('it renders a labelled range', /type="range"/.test(html) && /aria-labelledby/.test(html));
@@ -2180,6 +2354,628 @@ function testTheme(){
   T('and no spacing token either', light.indexOf('--space-') === -1);
 }
 
+/* =========================================================
+   CONTRACT 30 — the answer to "now" survives the landing scroll
+   ---------------------------------------------------------
+   Reported from a real iPhone: Today opened, scrolled itself to the
+   clock line, and left the summary of what was happening now above
+   the fold. It was correct and invisible at the same time.
+   ========================================================= */
+function testContext(){
+  section('CONTRACT 30 — the context bar, and a clock that does not repaint the day');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const D = c.todayCivil();
+  c.prefs = c.normalizePrefs({ dayStart: 0, dayEnd: 1439 });
+
+  sub('four states, because they are four different questions');
+  c.items = [
+    c.normalizeItem({ title: 'Running', kind: 'task', date: D, start: 600, duration: 60 }),
+    c.normalizeItem({ title: 'Later',   kind: 'task', date: D, start: 900, duration: 30 })
+  ];
+  c.overrides = [];
+  T('inside a block it is NOW', c.contextState(D, 620).kind === 'now', c.contextState(D, 620).kind);
+  T('and it names the block', c.contextState(D, 620).occ.title === 'Running');
+  T('minutes left are counted from the clock', c.contextState(D, 620).left === 40,
+    String(c.contextState(D, 620).left));
+  T('just before something it is NEXT', c.contextState(D, 890).kind === 'next',
+    c.contextState(D, 890).kind);
+  T('with real time before it, it is FREE', c.contextState(D, 700).kind === 'free',
+    c.contextState(D, 700).kind);
+  T('after everything it is CLEAR', c.contextState(D, 1000).kind === 'clear',
+    c.contextState(D, 1000).kind);
+  c.items = []; c.overrides = [];
+  T('with nothing at all it is empty', c.contextState(D, 600).kind === 'empty');
+
+  sub('another day never claims to have a now');
+  c.items = [c.normalizeItem({ title: 'Tomorrow thing', kind: 'task',
+    date: c.addDays(D, 1), start: 600, duration: 60 })];
+  const other = c.contextState(c.addDays(D, 1), 620);
+  T('it reports what is planned instead', other.kind === 'other', other.kind);
+  T('and carries no current block', other.occ === undefined);
+
+  sub('completion never moves the clock, and never rewrites the plan');
+  c.items = [c.normalizeItem({ title: 'Running', kind: 'task', date: D, start: 600, duration: 60 })];
+  c.overrides = [];
+  const plannedAt = c.items[0].start;
+  const railBefore = c.contextState(D, 620).kind;
+  c.setOccurrenceStatus(c.items[0].id, D, 'done');
+  T('the planned time is untouched', c.items[0].start === plannedAt);
+  T('and the moment it happened was recorded', typeof c.items[0].completedAt === 'string');
+  T('a finished block is no longer "now"', c.contextState(D, 620).kind !== railBefore);
+
+  sub('the clock tick repaints the bar, not the day');
+  const src = js();
+  T('repaintNowRail no longer re-renders Today',
+    !/function repaintNowRail\(\)\{[\s\S]{0,900}renderToday\(\);/.test(src));
+  T('it repaints the bar instead',
+    /function repaintNowRail\(\)\{[\s\S]{0,1400}paintContextBar\(\);/.test(src));
+  T('and the bar only rebuilds when the state itself changed',
+    /if\(contextKey\(st\) !== _ctxKey\)/.test(src));
+
+  sub('the bar is sticky, so it is still there at the landing position');
+  T('it sticks', /\.ctx-holder\{[\s\S]{0,200}position: sticky/.test(css()));
+  T('below the safe area rather than under the notch',
+    /\.ctx-holder\{[\s\S]{0,240}top: var\(--inset-top\)/.test(css()));
+  T('and it is opaque, because the timeline scrolls under it',
+    /\.ctx-holder\{[\s\S]{0,320}background: var\(--bg\)/.test(css()));
+
+  sub('the running block is identifiable on the timeline too');
+  T('a class marks it', /cls\.push\('blk-now'\)/.test(src));
+  T('and it is drawn', /\.blk-now\{/.test(css()));
+}
+
+/* =========================================================
+   CONTRACT 31 — one way out, however it is asked for
+   ---------------------------------------------------------
+   Back, the swipe, Escape and the device back gesture reach the
+   same policy. A page that discards an edit for one of them and
+   asks for another is a page that cannot be trusted with either.
+   ========================================================= */
+function testExitPolicy(){
+  section('CONTRACT 31 — leaving a task page');
+  const src = js();
+
+  sub('the gesture does not invent a second way to close a page');
+  T('a completed swipe calls the surface\'s own declared closer',
+    /const closer = sheetCloser\(w\.ov\);/.test(src));
+  T('there is still exactly one overlay observer',
+    (src.match(/new MutationObserver\(/g) || []).length === 1);
+  T('and no second scroll-lock implementation appeared',
+    (src.match(/classList\.add\('scroll-locked'\)/g) || []).length === 1);
+
+  sub('only the top surface swipes');
+  T('it reads the open stack', /function swipeableTop\(\)\{[\s\S]{0,200}topOpenSheet\(\)/.test(src));
+  T('and only pages that opted in', /getAttribute\('data-swipe'\) !== '1'/.test(src));
+  const mk = markup();
+  T('the task detail page opted in', /id="itemDetailOverlay" data-swipe="1"/.test(mk));
+  T('so did the editor', /id="itemFormOverlay" data-swipe="1"/.test(mk));
+  T('a settings sheet did not', !/id="dayOverlay"[^>]*data-swipe/.test(mk));
+
+  sub('controls that own a sideways gesture keep it');
+  T('fields, sliders and horizontal scrollers are excluded',
+    /function swipeExempt\([\s\S]{0,1100}scrollWidth > node\.clientWidth/.test(src));
+  /* THE DEFECT THIS PREVENTS, found by driving the gesture in a browser: the
+     walk climbed past the page to the overlay container, whose scrollWidth is
+     a scrollbar wider than its clientWidth. Every gesture was therefore
+     classified as belonging to a horizontal scroller, and the swipe never
+     fired once. The rule is about controls INSIDE the page. */
+  T('the walk stops at the page it is swiping',
+    /if\(node === root\) return false;/.test(src) &&
+    /node\.classList\.contains\('sheet'\)/.test(src));
+  T('so is an active text selection', /getSelection\(\)\) !== ''\) return;/.test(src));
+  T('the browser keeps its own edge', /clientX <= SWIPE_EDGE_GUARD\) return;/.test(src));
+  T('vertical movement disarms it permanently',
+    /Math\.abs\(dy\) >= Math\.abs\(dx\)\)\{ _swipe = null; return; \}/.test(src));
+  T('a second finger cancels rather than leaving it half dragged',
+    /isPrimary === false\)\{ cancelSwipe\(\); return; \}/.test(src));
+
+  sub('a small movement never navigates, however fast it was');
+  /* THE DEFECT THIS PREVENTS, found by driving the gesture in a browser: the
+     commit rule accepted velocity ALONE. Velocity is measured over the last
+     pair of move events, so a 26px twitch reported several px/ms and closed
+     the page — a quarter of the distance the threshold asks for. */
+  T('a flick has to have travelled as well as moved fast',
+    /const flick = w\.vx > SWIPE_VELOCITY && travelled > w\.width \* SWIPE_FLICK_MIN;/.test(src));
+  T('and the floor is a real fraction of the page',
+    /const SWIPE_FLICK_MIN = 0\.\d+;/.test(src));
+
+  sub('nothing measures layout or writes storage while a finger is moving');
+  const move = src.slice(src.indexOf('function onSwipeMove('),
+                         src.indexOf('function onSwipeUp('));
+  T('no layout is read during the move', !/getBoundingClientRect|rectOf\(/.test(move));
+  T('nothing is persisted during the move', !/Store\.|persist/.test(move));
+  T('nothing is re-rendered during the move', !/render[A-Z]/.test(move));
+  T('the width was measured once, at the start',
+    /width: rect \? rect\.width/.test(src));
+  T('and the page moves by transform', /translate3d\(/.test(src));
+
+  sub('every interruption leaves a deterministic state');
+  ['pointercancel', 'orientationchange', 'resize', 'visibilitychange'].forEach(ev =>
+    T(ev + ' cancels the gesture', new RegExp("'" + ev + "'").test(src)));
+  T('and the settle always clears its own inline styles',
+    /sheet\.style\.transform = '';/.test(src));
+  T('using a timer, because an interrupted transition never fires its event',
+    /setTimeout\(finish,/.test(src));
+
+  sub('a changed edit is neither discarded nor saved behind the person');
+  const app = H.loadApp();
+  const c = app.ctx, d = app.dom.document;
+  c.items = [c.normalizeItem({ title: 'Existing', kind: 'task', date: '2026-09-20', start: 600, duration: 30 })];
+  c.persistItems();
+  c.openItemForm(c.items[0].id); c.__flush();
+  T('an untouched edit is not dirty', c.formIsDirtyEdit() === false);
+  d.getElementById('itemTitle').value = 'Changed';
+  T('a changed one is', c.formIsDirtyEdit() === true);
+  c.closeItemForm(); c.__flush();
+  T('leaving asks first', d.getElementById('confirmOverlay').classList.contains('open'));
+  T('and the form is still open behind the question',
+    d.getElementById('itemFormOverlay').classList.contains('open'));
+  c.closeConfirm(); c.__flush();
+  T('keeping the edit leaves the record alone', c.items[0].title === 'Existing');
+
+  sub('a clean page leaves without asking');
+  c.openItemForm(c.items[0].id); c.__flush();
+  c.closeItemForm(); c.__flush();
+  T('no question was raised', !d.getElementById('confirmOverlay').classList.contains('open'));
+  T('and the page closed', !d.getElementById('itemFormOverlay').classList.contains('open'));
+
+  sub('an existing edit never becomes a draft, however it is left');
+  c.openItemForm(c.items[0].id); c.__flush();
+  d.getElementById('itemTitle').value = 'Changed again';
+  c.flushDraft();
+  T('nothing was drafted', c.Store.get(c.KEYS.itemDraft) === null);
+
+  sub('100 open/close cycles leave nothing behind');
+  /* The check above deliberately left the editor open; close it before
+     counting, or the loop starts one surface deep. */
+  c.forceCloseItemForm(); c.__flush();
+  for(let i = 0; i < 100; i++){
+    c.openItemDetail(c.items[0].id); c.__flush();
+    c.closeItemDetail(); c.__flush();
+  }
+  T('the stack is empty', c._openSheetStack.length === 0, String(c._openSheetStack.length));
+  T('the lock depth is zero', c._lockDepth === 0, String(c._lockDepth));
+  T('the body is not left locked', !d.body.classList.contains('scroll-locked'));
+  T('no swipe state survived', c._swipe === null || c._swipe === undefined);
+  T('the opener map did not grow', c._sheetOpeners.size === 0, String(c._sheetOpeners.size));
+  T('history did not run away', Math.abs(c._historyDepth) <= 1, String(c._historyDepth));
+  T('no console errors', app.errors.length === 0, app.errors.join(' | '));
+}
+
+/* =========================================================
+   CONTRACT 32 — settings is a list of values
+   ========================================================= */
+function testSettings(){
+  section('CONTRACT 32 — settings states what it is set to');
+  const app = H.loadApp();
+  const c = app.ctx, d = app.dom.document;
+  c.prefs = c.normalizePrefs({ dayStart: 7 * 60, dayEnd: 22 * 60, defaultDuration: 45, bufferMinutes: 10 });
+  c.renderSettings();
+  const html = d.getElementById('settingsBody').innerHTML;
+
+  sub('every row carries its current value');
+  T('the theme row shows the choice', html.indexOf(c.THEME_LABEL[c.currentTheme]) !== -1);
+  T('the day row shows the window', /7:00\s*(AM)?\s*–\s*10:00\s*PM|07:00 – 22:00/.test(
+    d.getElementById('settingsBody').textContent));
+  T('the default length shows its duration', html.indexOf('45 min') !== -1);
+  T('the buffer shows its value', html.indexOf('10 min') !== -1);
+
+  sub('the adjusters moved into focused sheets');
+  T('no range input is on the settings root', html.indexOf('type="range"') === -1);
+  T('no number input either', html.indexOf('type="number"') === -1);
+  T('and no select', html.indexOf('<select') === -1);
+  ['themeOverlay', 'dayOverlay', 'schedulingOverlay', 'reminderOverlay'].forEach(id =>
+    T(id + ' exists as its own surface', !!d.getElementById(id)));
+
+  sub('a sheet and the row that summarises it cannot disagree');
+  c.openDaySheet(); c.__flush();
+  c.ctlSet('setDuration', 90);
+  c.setPrefValue('defaultDuration', 90);
+  c.renderSettings();
+  T('changing it in the sheet updates the summary',
+    d.getElementById('settingsBody').innerHTML.indexOf('1 hr 30 min') !== -1 ||
+    d.getElementById('settingsBody').innerHTML.indexOf('1h 30m') !== -1,
+    String(c.prefs.defaultDuration));
+  c.closeDaySheet(); c.__flush();
+
+  sub('the reminder limitation is still stated where it matters');
+  T('the root says what reminders can actually do',
+    /not set up|while Dayplan is open|blocked|cannot show/.test(
+      d.getElementById('settingsBody').textContent));
+
+  sub('diagnostics stays behind its own door');
+  T('it is a row, not a panel', html.indexOf('Diagnostics') !== -1);
+  T('and none of its detail is on the root',
+    html.indexOf(c.CACHE_NAMESPACE) === -1 && html.indexOf(c.STORAGE_NAMESPACE) === -1);
+}
+
+/* =========================================================
+   CONTRACT 33 — drafts written by an older version still load
+   ---------------------------------------------------------
+   The committed-item schema did not change, which is exactly why
+   this was missed: the DRAFT shape did. A draft is data too.
+   ========================================================= */
+async function testLegacyDrafts(){
+  section('CONTRACT 33 — a draft survives the version that wrote it');
+
+  sub('a v0.2.0 draft keeps its schedule');
+  {
+    const shared = new Map();
+    const seed = H.loadApp({ sharedStorage: shared });
+    /* Exactly what v0.2.0 wrote: no scheduled, no windowed, no priority. */
+    seed.ctx.Store.setJSON(seed.ctx.KEYS.itemDraft, {
+      kind: 'task', title: 'Legacy draft', notes: '', tagId: null,
+      date: '2026-09-20', start: 600, duration: 45,
+      earliest: 540, latest: 720, recurrence: null, reminders: [10]
+    });
+
+    const app = H.loadApp({ sharedStorage: shared });
+    const c = app.ctx, d = app.dom.document;
+    const f = c.formDraftLoad();
+    T('the missing scheduled flag is inferred from its own fields', f.scheduled === true,
+      String(f.scheduled));
+    T('and the missing windowed flag likewise', f.windowed === true, String(f.windowed));
+
+    c.openItemForm(); c.__flush();
+    T('the form opens it as scheduled', c.formScheduled === true, String(c.formScheduled));
+    T('showing the day it was placed on',
+      d.getElementById('itemDate').value === '2026-09-20', d.getElementById('itemDate').value);
+    c.saveItemForm(); c.__flush();
+    const saved = c.items[c.items.length - 1];
+    T('saving keeps the exact day', saved.date === '2026-09-20', String(saved.date));
+    T('and the exact start', saved.start === 600, String(saved.start));
+    T('and the allowed window', saved.earliest === 540 && saved.latest === 720,
+      saved.earliest + '/' + saved.latest);
+    T('and the reminder', saved.reminders.join(',') === '10', saved.reminders.join(','));
+  }
+
+  sub('an explicit false in a newer draft is a decision, not a gap');
+  {
+    const shared = new Map();
+    const seed = H.loadApp({ sharedStorage: shared });
+    /* Someone turned the schedule OFF but the fields are still there. */
+    seed.ctx.Store.setJSON(seed.ctx.KEYS.itemDraft, {
+      kind: 'task', title: 'Deliberately unscheduled', notes: '', tagId: null,
+      date: '2026-09-20', start: 600, duration: 30, scheduled: false, windowed: false,
+      priority: 1, deadline: null, earliest: 540, latest: null, recurrence: null, reminders: []
+    });
+    const app = H.loadApp({ sharedStorage: shared });
+    const f = app.ctx.formDraftLoad();
+    T('the false is honoured rather than inferred away', f.scheduled === false, String(f.scheduled));
+    T('and so is windowed', f.windowed === false, String(f.windowed));
+    app.ctx.openItemForm(); app.ctx.__flush();
+    app.ctx.saveItemForm(); app.ctx.__flush();
+    const saved = app.ctx.items[app.ctx.items.length - 1];
+    T('it saves to the inbox, as asked', saved.date === null && saved.start === null,
+      JSON.stringify([saved.date, saved.start]));
+  }
+
+  sub('a resumed draft is not moved to the day you happen to be looking at');
+  ['quick', 'full'].forEach(entry => {
+    const shared = new Map();
+    const seed = H.loadApp({ sharedStorage: shared });
+    seed.ctx.Store.setJSON(seed.ctx.KEYS.itemDraft, {
+      kind: 'task', title: 'Booked for the 20th', notes: '', tagId: null,
+      date: '2026-09-20', start: 600, duration: 30, scheduled: true, windowed: false,
+      priority: 1, deadline: null, earliest: null, latest: null, recurrence: null, reminders: []
+    });
+    const app = H.loadApp({ sharedStorage: shared });
+    const c = app.ctx;
+    if(entry === 'quick'){
+      c.openQuickAdd('2026-09-21'); c.__flush();
+      c.expandQuickAdd(); c.__flush();
+    } else {
+      c.openItemForm(null, '2026-09-21'); c.__flush();
+    }
+    c.saveItemForm(); c.__flush();
+    const saved = c.items[c.items.length - 1];
+    T('via ' + entry + ': it stays on the 20th', saved.date === '2026-09-20', String(saved.date));
+    T('via ' + entry + ': at its own time', saved.start === 600, String(saved.start));
+  });
+
+  sub('a preset still places a genuinely new capture');
+  {
+    const app = H.loadApp();
+    const c = app.ctx, d = app.dom.document;
+    c.openQuickAdd('2026-09-21'); c.__flush();
+    d.getElementById('quickTitle').value = 'Fresh one';
+    c.toggleQuickSchedule();
+    c.saveQuickAdd(); c.__flush();
+    const saved = c.items[c.items.length - 1];
+    T('it lands on the day being viewed', saved.date === '2026-09-21', String(saved.date));
+  }
+
+  sub('a title-only capture survives a refresh, not just a tidy close');
+  {
+    const shared = new Map();
+    const app = H.loadApp({ sharedStorage: shared });
+    const c = app.ctx, d = app.dom.document;
+    c.openQuickAdd(null); c.__flush();
+    d.getElementById('quickTitle').value = 'Only a title';
+    const field = d.getElementById('quickTitle');
+    if(field.dispatch) field.dispatch('input', {});
+    await H.settle(600);                       /* past the 400ms debounce */
+    T('the debounce wrote it', c.Store.getJSON(c.KEYS.itemDraft, null) !== null);
+    T('with the title', (c.Store.getJSON(c.KEYS.itemDraft, {}) || {}).title === 'Only a title');
+
+    /* A refresh with no close at all — the case a debounce alone cannot cover
+       once the tab is discarded mid-timer. */
+    const reopened = H.loadApp({ sharedStorage: shared });
+    reopened.ctx.openQuickAdd(null); reopened.ctx.__flush();
+    T('and it comes back after a reload',
+      reopened.dom.document.getElementById('quickTitle').value === 'Only a title',
+      reopened.dom.document.getElementById('quickTitle').value);
+  }
+
+  sub('going to the background commits before the debounce can');
+  {
+    const shared = new Map();
+    const app = H.loadApp({ sharedStorage: shared });
+    const c = app.ctx, d = app.dom.document;
+    c.openQuickAdd(null); c.__flush();
+    d.getElementById('quickTitle').value = 'Typed then backgrounded';
+    /* No wait: the tab is hidden inside the debounce window. */
+    c.document.visibilityState = 'hidden';
+    c.document.dispatch('visibilitychange', {});
+    T('it was written immediately', (c.Store.getJSON(c.KEYS.itemDraft, {}) || {}).title
+      === 'Typed then backgrounded',
+      JSON.stringify(c.Store.getJSON(c.KEYS.itemDraft, null)));
+    c.document.visibilityState = 'visible';
+  }
+
+  sub('a capture that cannot be written is not lost quietly');
+  {
+    const app = H.loadApp();
+    const c = app.ctx, d = app.dom.document;
+    c.openQuickAdd(null); c.__flush();
+    d.getElementById('quickTitle').value = 'Cannot be kept';
+    c.Store.setJSON = function(){ return false; };
+    c.closeQuickAdd(); c.__flush();
+    const host = d.getElementById('toastHost');
+    const said = host.children.map(ch => ch.innerHTML || ch.textContent || '').join(' ');
+    T('the person is told', /could not be saved/.test(said), said.slice(0, 110));
+  }
+
+  sub('and a saved capture still leaves no ghost behind');
+  {
+    const app = H.loadApp();
+    const c = app.ctx, d = app.dom.document;
+    c.openQuickAdd(null); c.__flush();
+    d.getElementById('quickTitle').value = 'Filed';
+    c.scheduleDraftSave();
+    c.saveQuickAdd(); c.__flush();
+    await H.settle(600);
+    T('the draft is gone and stays gone', c.Store.get(c.KEYS.itemDraft) === null,
+      String(c.Store.get(c.KEYS.itemDraft)));
+    T('and exactly one record exists', c.items.length === 1, String(c.items.length));
+  }
+}
+
+/* =========================================================
+   CONTRACT 34 — a settling swipe belongs to the page that started it
+   ---------------------------------------------------------
+   Timed, because the defect lives entirely in the gap between the
+   finger lifting and the transition finishing.
+   ========================================================= */
+async function testSwipeOwnership(){
+  section('CONTRACT 34 — gesture ownership through the settling phase');
+
+  function mkApp(){
+    const app = H.loadApp();
+    const c = app.ctx, d = app.dom.document;
+    c.items = [
+      c.normalizeItem({ title: 'Task A', kind: 'task', date: '2026-09-20', start: 600, duration: 30 }),
+      c.normalizeItem({ title: 'Task B', kind: 'task', date: '2026-09-20', start: 700, duration: 30 })
+    ];
+    c.persistItems();
+    return app;
+  }
+  function pd(c, el, x, y, id){
+    c.document.dispatch('pointerdown', { target: el, clientX: x, clientY: y,
+      pointerId: id === undefined ? 1 : id, pointerType: 'touch', isPrimary: true,
+      button: 0, preventDefault(){} });
+  }
+  function pm(c, el, x, y, id){
+    c.document.dispatch('pointermove', { target: el, clientX: x, clientY: y,
+      pointerId: id === undefined ? 1 : id, pointerType: 'touch', isPrimary: true,
+      preventDefault(){} });
+  }
+  function pu(c, el, x, y, id){
+    c.document.dispatch('pointerup', { target: el, clientX: x, clientY: y,
+      pointerId: id === undefined ? 1 : id, pointerType: 'touch', isPrimary: true,
+      preventDefault(){} });
+  }
+  function sheetOf(d, id){ return d.getElementById(id).querySelector('.sheet'); }
+
+  sub('reopening the surface for another task during settlement');
+  {
+    const app = mkApp();
+    const c = app.ctx, d = app.dom.document;
+    const A = c.items[0].id, B = c.items[1].id;
+    c.openItemDetail(A); c.__flush();
+    const sh = sheetOf(d, 'itemDetailOverlay');
+    pd(c, sh, 200, 400); pm(c, sh, 300, 402); pm(c, sh, 360, 404); pu(c, sh, 360, 404);
+    /* The completion is now in flight. Close and reopen for a different task
+       inside that window — which is exactly what used to shut task B. */
+    c.closeItemDetail(); c.__flush();
+    c.openItemDetail(B); c.__flush();
+    T('task B is open', d.getElementById('itemDetailOverlay').classList.contains('open'));
+    await H.settle(400);
+    T('and the stale completion did not close it',
+      d.getElementById('itemDetailOverlay').classList.contains('open'));
+    T('it is still task B', c.detailItemId === B, String(c.detailItemId));
+  }
+
+  sub('a second gesture during settlement');
+  {
+    const app = mkApp();
+    const c = app.ctx, d = app.dom.document;
+    c.openItemDetail(c.items[0].id); c.__flush();
+    const sh = sheetOf(d, 'itemDetailOverlay');
+    pd(c, sh, 200, 400); pm(c, sh, 240, 402); pu(c, sh, 240, 402);   /* short: cancels */
+    pd(c, sh, 200, 400);                                             /* immediately again */
+    T('the new gesture is refused while the old one settles', c._swipe === null);
+    await H.settle(400);
+    T('and the page is still open', d.getElementById('itemDetailOverlay').classList.contains('open'));
+    T('with nothing left on the element', sheetOf(d, 'itemDetailOverlay').style.transform === '');
+  }
+
+  sub('rotation after the release but before completion');
+  {
+    const app = mkApp();
+    const c = app.ctx, d = app.dom.document;
+    c.openItemDetail(c.items[0].id); c.__flush();
+    const sh = sheetOf(d, 'itemDetailOverlay');
+    pd(c, sh, 200, 400); pm(c, sh, 300, 402); pm(c, sh, 360, 404); pu(c, sh, 360, 404);
+    c.window.dispatch('orientationchange', {});
+    await H.settle(400);
+    T('the interrupted completion left the page open',
+      d.getElementById('itemDetailOverlay').classList.contains('open'));
+    T('and cleared its own styles', sh.style.transform === '' && sh.style.transition === '');
+    T('and the body is not left mid-swipe', !d.body.classList.contains('swiping'));
+  }
+
+  sub('backgrounding after the release but before completion');
+  {
+    const app = mkApp();
+    const c = app.ctx, d = app.dom.document;
+    c.openItemDetail(c.items[0].id); c.__flush();
+    const sh = sheetOf(d, 'itemDetailOverlay');
+    pd(c, sh, 200, 400); pm(c, sh, 300, 402); pm(c, sh, 360, 404); pu(c, sh, 360, 404);
+    c.document.visibilityState = 'hidden';
+    c.document.dispatch('visibilitychange', {});
+    await H.settle(400);
+    T('the page is still open and deterministic',
+      d.getElementById('itemDetailOverlay').classList.contains('open'));
+    c.document.visibilityState = 'visible';
+  }
+
+  sub('a confirmation appearing during the gesture takes ownership');
+  {
+    const app = mkApp();
+    const c = app.ctx, d = app.dom.document;
+    c.openItemDetail(c.items[0].id); c.__flush();
+    const sh = sheetOf(d, 'itemDetailOverlay');
+    pd(c, sh, 200, 400); pm(c, sh, 300, 402);
+    T('the gesture is live', !!c._swipe && c._swipe.claimed);
+    c.openOverlay('confirmOverlay'); c.__flush();
+    pm(c, sh, 340, 404);
+    T('it was handed over the moment something opened on top', c._swipe === null);
+    await H.settle(300);
+    T('the page beneath did not move', sh.style.transform === '');
+    c.closeOverlay('confirmOverlay'); c.__flush();
+  }
+
+  sub('a second finger, and a pointer that was never part of this');
+  {
+    const app = mkApp();
+    const c = app.ctx, d = app.dom.document;
+    c.openItemDetail(c.items[0].id); c.__flush();
+    const sh = sheetOf(d, 'itemDetailOverlay');
+    pd(c, sh, 200, 400, 1); pm(c, sh, 300, 402, 1);
+    T('one finger has the gesture', !!c._swipe);
+    pd(c, sh, 120, 500, 2);                       /* a second finger lands */
+    T('a second finger cancels it', c._swipe === null);
+    await H.settle(300);
+    T('and the page stayed', d.getElementById('itemDetailOverlay').classList.contains('open'));
+
+    pd(c, sh, 200, 400, 1); pm(c, sh, 300, 402, 1); pm(c, sh, 360, 404, 1);
+    pu(c, sh, 360, 404, 7);                       /* an unrelated pointer lifts */
+    T('an unrelated release does not commit it', !!c._swipe);
+    pu(c, sh, 360, 404, 1);                       /* the real one lifts */
+    await H.settle(400);
+    T('the real release does', !d.getElementById('itemDetailOverlay').classList.contains('open'));
+  }
+
+  sub('nothing accumulates across a hundred settle cycles');
+  {
+    const app = mkApp();
+    const c = app.ctx, d = app.dom.document;
+    for(let i = 0; i < 100; i++){
+      c.openItemDetail(c.items[i % 2].id); c.__flush();
+      const sh = sheetOf(d, 'itemDetailOverlay');
+      pd(c, sh, 200, 400); pm(c, sh, 250, 402); pu(c, sh, 250, 402);
+      c.closeItemDetail(); c.__flush();
+    }
+    await H.settle(500);
+    T('no gesture is left live', c._swipe === null);
+    T('no settlement is left pending', c._settling === null, JSON.stringify(c._settling));
+    T('the overlay stack is empty', c._openSheetStack.length === 0, String(c._openSheetStack.length));
+    T('the scroll lock is released', c._lockDepth === 0, String(c._lockDepth));
+    T('history did not run away', Math.abs(c._historyDepth) <= 1, String(c._historyDepth));
+    T('no console errors', app.errors.length === 0, app.errors.join(' | '));
+  }
+}
+
+/* =========================================================
+   CONTRACT 35 — Back returns from a task, and the marker follows the clock
+   ========================================================= */
+function testBackAndMarker(){
+  section('CONTRACT 35 — device Back, and the running-block marker');
+  const app = H.loadApp();
+  const c = app.ctx, d = app.dom.document;
+  c.items = [c.normalizeItem({ title: 'A', kind: 'task', date: '2026-09-20', start: 600, duration: 30 })];
+  c.persistItems();
+
+  sub('a task page is a place you can come back from');
+  const base = c._historyDepth;
+  c.openItemDetail(c.items[0].id); c.__flush();
+  T('opening the detail leaves an entry to consume', c._historyDepth === base + 1,
+    String(c._historyDepth));
+  c.closeItemDetail(); c.__flush();
+  T('closing gives it back', c._historyDepth === base, String(c._historyDepth));
+
+  c.openItemForm(c.items[0].id); c.__flush();
+  T('so does the editor', c._historyDepth === base + 1, String(c._historyDepth));
+  c.forceCloseItemForm(); c.__flush();
+  T('and it is released once, not twice', c._historyDepth === base, String(c._historyDepth));
+
+  sub('a cancelled confirmation leaves an entry to press Back with again');
+  c.openItemForm(c.items[0].id); c.__flush();
+  d.getElementById('itemTitle').value = 'Changed';
+  /* Simulate what a real Back does: the entry is consumed before the policy
+     is asked. */
+  c._historyDepth = c._historyDepth - 1;
+  c.closeItemForm(); c.__flush();
+  T('the confirmation is up', d.getElementById('confirmOverlay').classList.contains('open'));
+  T('and an entry was put back, so Back still works',
+    c._historyDepth === base + 1, String(c._historyDepth));
+  c.closeConfirm(); c.__flush();
+  c.forceCloseItemForm(); c.__flush();
+  T('leaving for real settles the depth', c._historyDepth === base, String(c._historyDepth));
+
+  sub('the running marker moves from the ending block to the starting one');
+  const D = c.todayCivil();
+  c.prefs = c.normalizePrefs({ dayStart: 0, dayEnd: 1439 });
+  c.items = [
+    c.normalizeItem({ title: 'Ending', kind: 'task', date: D, start: 600, duration: 60 }),
+    c.normalizeItem({ title: 'Starting', kind: 'task', date: D, start: 660, duration: 60 })
+  ];
+  c.overrides = [];
+  const occs = c.occurrencesForDate(D);
+  const at = m => occs.filter(o => c.occurrenceIsRunning(o, m)).map(o => o.title).join(',');
+  T('before the boundary it is the first', at(630) === 'Ending', at(630));
+  T('after it, the second', at(690) === 'Starting', at(690));
+  T('exactly one block is ever running', at(630).split(',').length === 1);
+  T('a finished block is never running', (() => {
+    c.setOccurrenceStatus(c.items[0].id, D, 'done');
+    return c.occurrencesForDate(D).filter(o => c.occurrenceIsRunning(o, 630)).length === 0;
+  })());
+  T('and another day never has one',
+    c.occurrencesForDate(c.addDays(D, 1)).filter(o => c.occurrenceIsRunning(o, 630)).length === 0);
+
+  sub('one owner decides it, so the render and the clock cannot disagree');
+  const src = js();
+  T('the renderer asks the predicate', /if\(occurrenceIsRunning\(occ\)\) cls\.push\('blk-now'\)/.test(src));
+  T('and so does the clock path', /occurrenceIsRunning\(o, m\)/.test(src));
+  T('the tick refreshes it without rendering',
+    /paintContextBar\(\);\s*refreshRunningBlock\(\);/.test(src));
+  const fn = src.slice(src.indexOf('function refreshRunningBlock('),
+                       src.indexOf('function refreshRunningBlock(') + 900);
+  T('and touches only class lists', !/innerHTML/.test(fn));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -2188,5 +2984,7 @@ module.exports = {
   testAccessibility, testContamination, testSourcesOfTruth,
   /* the product's own */
   testTime, testModel, testRecurrence, testTimeline, testDrag,
+  testContext, testExitPolicy, testSettings,
+  testLegacyDrafts, testSwipeOwnership, testBackAndMarker,
   testAutoPlan, testReminders, testExport, testTags, testTheme
 };
