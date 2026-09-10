@@ -59,7 +59,8 @@ const SUITES = [
   C.testSettings,
   C.testLegacyDrafts,
   C.testSwipeOwnership,
-  C.testBackAndMarker
+  C.testBackAndMarker,
+  C.testDataOwnership
 ];
 
 async function main(){

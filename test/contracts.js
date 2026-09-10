@@ -2985,6 +2985,160 @@ function testBackAndMarker(){
   T('and touches only class lists', !/innerHTML/.test(fn));
 }
 
+/* =========================================================
+   CONTRACT 36 — a person can get their data out
+   ---------------------------------------------------------
+   The Backup & data page threw a ReferenceError before it opened,
+   so the export was unreachable from the app for three releases.
+   Nothing caught it because no contract had ever opened the page.
+   ========================================================= */
+async function testDataOwnership(){
+  section('CONTRACT 36 — getting your data out');
+
+  sub('every control is wired to something that exists');
+  /* THE DEFECT THIS PREVENTS, and its whole class: a row called statHtml(),
+     which had gone out with the demo domain it belonged to. The tap threw,
+     the page never opened, and there was no way to reach the export at all.
+     This walks every onclick the app ships — static markup and the surfaces
+     it generates — and asks whether the function is actually there. */
+  {
+    const app = H.loadApp();
+    const c = app.ctx, d = app.dom.document;
+    c.items = [c.normalizeItem({ title: 'A', kind: 'task', date: '2026-09-20', start: 600, duration: 30 })];
+    c.persistItems();
+
+    const named = (html) => [...String(html).matchAll(/onclick="([a-zA-Z_$][\w$]*)\s*\(/g)].map(m => m[1]);
+    const seen = new Set(named(markup()));
+
+    /* The generated surfaces too — most of the product's controls are drawn,
+       not written into the body. */
+    c.renderSettings();
+    c.renderInbox();
+    c.renderToday();
+    c.renderPlan();
+    c.openDataSettings(); c.__flush();
+    c.openItemDetail(c.items[0].id); c.__flush();
+    ['settingsBody', 'inboxBody', 'todayBody', 'planBody', 'dataStats', 'itemDetailBody']
+      .forEach(id => { const el = d.getElementById(id); if(el) named(el.innerHTML).forEach(n => seen.add(n)); });
+    c.closeItemDetail(); c.__flush();
+    c.closeDataSettings(); c.__flush();
+
+    const missing = [...seen].filter(name => typeof c[name] !== 'function');
+    T('every control names a function that exists', missing.length === 0, missing.join(', '));
+    T('and the walk actually covered the app', seen.size >= 20, String(seen.size));
+  }
+
+  sub('the Backup & data page opens, and shows what is stored');
+  {
+    const app = H.loadApp();
+    const c = app.ctx, d = app.dom.document;
+    c.items = [
+      c.normalizeItem({ title: 'A', kind: 'task', date: '2026-09-20', start: 600, duration: 30 }),
+      c.normalizeItem({ title: 'B', kind: 'task', date: '2026-09-21', start: 600, duration: 30 })
+    ];
+    c.persistItems();
+    c.openDataSettings(); c.__flush();
+    T('it opens', d.getElementById('dataOverlay').classList.contains('open'));
+    const stats = d.getElementById('dataStats').innerHTML;
+    T('and reports the record count', /stat-value/.test(stats) && stats.indexOf('>2<') !== -1,
+      stats.slice(0, 90));
+    T('the export control is reachable on it', /exportData\(\)/.test(markup()));
+    c.closeDataSettings(); c.__flush();
+  }
+
+  sub('a page opening never depends on a summary rendering');
+  T('the overlay is opened before the stats are drawn',
+    /function openDataSettings\(\)\{[\s\S]{0,320}openOverlay\('dataOverlay'\);[\s\S]{0,200}renderDataStats/.test(js()));
+
+  sub('an export never claims more than it did');
+  {
+    const app = H.loadApp();
+    const c = app.ctx, d = app.dom.document;
+    /* No share sheet, no download, no clipboard: there is no way out, and the
+       app has to say so instead of announcing a file it never made. */
+    c.navigator.share = undefined;
+    c.navigator.canShare = undefined;
+    c.navigator.clipboard = undefined;
+    c.document.createElement = (function(orig){
+      return function(tag){
+        const el = orig.call(c.document, tag);
+        if(tag === 'a'){ el.click = function(){ /* inert, as in an installed iOS app */ }; }
+        return el;
+      };
+    })(c.document.createElement);
+    const host = d.getElementById('toastHost');
+    host.children.length = 0;
+    c.exportData();
+    await H.settle(120);
+    const said = host.children.map(ch => ch.innerHTML || ch.textContent || '').join(' ');
+    T('it admits it could not', /could not be saved/.test(said), said.slice(0, 120));
+    T('and does not say the backup was saved', !/Backup saved|Backup ready/.test(said),
+      said.slice(0, 120));
+  }
+
+  sub('a backup carries committed data, and only that');
+  {
+    const app = H.loadApp();
+    const c = app.ctx, d = app.dom.document;
+    c.items = [c.normalizeItem({ title: 'Real', kind: 'task', date: '2026-09-20', start: 600, duration: 30 })];
+    c.persistItems();
+    c.openQuickAdd(null); c.__flush();
+    d.getElementById('quickTitle').value = 'Half typed';
+    c.flushDraft();
+    T('the draft is on disk', c.Store.get(c.KEYS.itemDraft) !== null);
+
+    /* Read the payload the same way exportData builds it. */
+    const keys = c.Store.listKeys()
+      .filter(k => k.indexOf(c.KEYS.backupPrefix) !== 0 && k.indexOf('draft.') !== 0);
+    T('committed records are included', keys.indexOf('data.items') !== -1, keys.join(','));
+    T('a half-typed capture is not', keys.every(k => k.indexOf('draft.') !== 0), keys.join(','));
+    T('and the source excludes it explicitly',
+      /if\(k\.indexOf\('draft\.'\) === 0\) return;/.test(js()));
+  }
+
+  sub('a restore brings back everything, including plain-string preferences');
+  /* THE DEFECT THIS PREVENTS: mergeBackup ran JSON.parse over every value and
+     returned early when it threw. A preference is stored as a bare string —
+     the theme is the four characters "dark" — so every one of them was
+     dropped from every restore, silently, while the import reported success. */
+  {
+    const source = new Map();
+    const a = H.loadApp({ sharedStorage: source });
+    const c = a.ctx;
+    c.items = [
+      c.normalizeItem({ title: 'Alpha', kind: 'task', date: '2026-09-20', start: 600, duration: 30,
+                        recurrence: { freq: 'daily', interval: 1 } }),
+      c.normalizeItem({ title: 'Beta', kind: 'event', date: '2026-09-21', start: 700, duration: 60 })
+    ];
+    c.overrides = []; c.persistItems(); c.persistOverrides();
+    c.setOccurrenceStatus(c.items[0].id, '2026-09-20', 'done');
+    c.prefs = c.normalizePrefs({ dayStart: 480, dayEnd: 1200, defaultDuration: 45 });
+    c.persistPrefs();
+    c.Store.set(c.KEYS.theme, 'light');
+
+    const data = {};
+    c.Store.listKeys()
+      .filter(k => k.indexOf(c.KEYS.backupPrefix) !== 0 && k.indexOf('draft.') !== 0)
+      .forEach(k => { data[k] = c.Store.get(k); });
+
+    const b = H.loadApp();          /* a clean device */
+    const res = b.ctx.mergeBackup(data);
+    b.ctx.Domain.hydrate();
+    T('the records came back', b.ctx.items.length === 2, String(b.ctx.items.length));
+    T('the exception came back', b.ctx.overrides.length === 1, String(b.ctx.overrides.length));
+    T('the completion survived',
+      b.ctx.occurrencesForDate('2026-09-20').some(o => o.status === 'done'));
+    T('the recurrence survived', b.ctx.items.some(i => !!i.recurrence));
+    T('the day window survived', b.ctx.prefs.dayStart === 480, String(b.ctx.prefs.dayStart));
+    T('the default length survived', b.ctx.prefs.defaultDuration === 45,
+      String(b.ctx.prefs.defaultDuration));
+    T('and the chosen theme survived, though it is a bare string',
+      b.ctx.currentTheme === 'light', b.ctx.currentTheme);
+    T('the import reported the collections it actually wrote', res.collections >= 3,
+      JSON.stringify(res));
+  }
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -2994,6 +3148,6 @@ module.exports = {
   /* the product's own */
   testTime, testModel, testRecurrence, testTimeline, testDrag,
   testContext, testExitPolicy, testSettings,
-  testLegacyDrafts, testSwipeOwnership, testBackAndMarker,
+  testLegacyDrafts, testSwipeOwnership, testBackAndMarker, testDataOwnership,
   testAutoPlan, testReminders, testExport, testTags, testTheme
 };

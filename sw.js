@@ -16,7 +16,7 @@
  */
 
 /* APP-CACHE-BEGIN */
-const CACHE_NAME = 'dayplan-v0.3.1';
+const CACHE_NAME = 'dayplan-v0.3.2';
 /* APP-CACHE-END */
 
 const ASSETS = [

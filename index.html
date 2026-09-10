@@ -2060,6 +2060,23 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v0-3-2',
+    version: '0.3.2',
+    title: 'Your data, out',
+    date: '2026-09-10',
+    summary: 'Backup and export work again, and now work from the installed app as well as a browser tab.',
+    newFeatures: [],
+    improvements: [
+      'Exporting from the installed app opens the share sheet, so a backup or a calendar file can go to Files, Mail or another device'
+    ],
+    fixes: [
+      'Backup & data would not open at all, which left no way to export anything',
+      'An export said it had saved a file even when it had produced nothing — it now tells you what actually happened',
+      'Restoring a backup brings your appearance and day settings back with it',
+      'A half-finished capture is no longer written into your backup file'
+    ]
+  },
+  {
     id: 'v0-3-1',
     version: '0.3.1',
     title: 'A face of its own',
@@ -4342,37 +4359,112 @@ function icsForRange(fromCivil, days){
   return entries.length ? buildIcs(entries) : null;
 }
 
-function downloadText(filename, text, mime){
+/* Is this running as an installed app rather than a browser tab? */
+function isInstalled(){
   try{
-    const blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    return true;
+    if(navigator.standalone === true) return true;              /* iOS */
+    return !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
   }catch(e){ return false; }
+}
+
+/* An installed app cannot be trusted to honour a download, even where the
+   property exists — which is the entire defect this replaces. */
+function canDownload(){
+  try{
+    if(isInstalled()) return false;
+    return 'download' in document.createElement('a');
+  }catch(e){ return false; }
+}
+
+/* GETTING A FILE OUT, and reporting what actually happened.
+
+   THE DEFECT THIS REPLACES: a[download] is inert in a home-screen app on
+   iOS. The click does nothing AND throws nothing, so the old code — which
+   treated "no exception" as success — announced a backup it had never
+   produced. Someone following that advice would believe their data was safe.
+
+   The share sheet is the supported route on an installed app: Save to Files,
+   Mail, AirDrop. It is tried first there, a download is the browser-tab path,
+   and the clipboard is a last resort so the data is still recoverable rather
+   than lost behind an error.
+
+   navigator.share must be reached from the user's gesture, so nothing is
+   awaited before it. */
+async function offerFile(filename, text, mime){
+  const type = mime || 'text/plain;charset=utf-8';
+  let file = null;
+  try{ file = new File([text], filename, { type: type }); }catch(e){ file = null; }
+
+  const shareable = !!file && (function(){
+    try{ return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })); }
+    catch(e){ return false; }
+  })();
+
+  async function share(){
+    try{
+      await navigator.share({ files: [file], title: filename });
+      return { ok: true, how: 'shared' };
+    }catch(e){
+      /* Dismissing the sheet is a decision, not a failure. */
+      if(e && e.name === 'AbortError') return { ok: true, how: 'cancelled' };
+      return null;
+    }
+  }
+
+  if(shareable && isInstalled()){
+    const r = await share();
+    if(r) return r;
+  }
+  if(canDownload()){
+    try{
+      const blob = new Blob([text], { type: type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => { try{ URL.revokeObjectURL(url); }catch(e){} }, 1000);
+      return { ok: true, how: 'downloaded' };
+    }catch(e){}
+  }
+  if(shareable){
+    const r = await share();
+    if(r) return r;
+  }
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      return { ok: true, how: 'copied' };
+    }
+  }catch(e){}
+  return { ok: false, how: 'none' };
+}
+
+/* Says what happened, and never more than that. */
+function reportFileOffer(res, kind){
+  if(!res || !res.ok){
+    toast('That could not be saved from the app. Opening Dayplan in a browser tab will let you download it.', 'error');
+    return false;
+  }
+  if(res.how === 'cancelled') return true;
+  if(res.how === 'shared') toast(kind + ' ready — choose where to keep it', 'success');
+  else if(res.how === 'copied') toast(kind + ' copied to the clipboard', 'success');
+  else toast(kind + ' saved', 'success');
+  return true;
 }
 
 function exportDayIcs(civil){
   const ics = icsForRange(civil, 1);
   if(!ics){ toast('There is nothing scheduled on this day to export.', 'warning'); return; }
-  if(downloadText(APP_CONFIG.id + '-' + civil + '.ics', ics, 'text/calendar;charset=utf-8')){
-    toast('Calendar file saved', 'success');
-  } else {
-    toast('Could not create the calendar file.', 'error');
-  }
+  offerFile(APP_CONFIG.id + '-' + civil + '.ics', ics, 'text/calendar;charset=utf-8')
+    .then(res => reportFileOffer(res, 'Calendar file'));
 }
 
 function exportWeekIcs(civil){
   const start = weekStart(civil);
   const ics = icsForRange(start, 7);
   if(!ics){ toast('There is nothing scheduled this week to export.', 'warning'); return; }
-  if(downloadText(APP_CONFIG.id + '-week-' + start + '.ics', ics, 'text/calendar;charset=utf-8')){
-    toast('Calendar file saved', 'success');
-  } else {
-    toast('Could not create the calendar file.', 'error');
-  }
+  offerFile(APP_CONFIG.id + '-week-' + start + '.ics', ics, 'text/calendar;charset=utf-8')
+    .then(res => reportFileOffer(res, 'Calendar file'));
 }
 
 /* Plain text, for sending someone a plan. Built from the same occurrences the
@@ -6972,11 +7064,8 @@ function detailExportIcs(){
   const ics = icsForItem(detailItemId, detailDate);
   if(!ics){ toast('This needs a day and a time before it can go to a calendar.', 'warning'); return; }
   const item = itemById(detailItemId);
-  if(downloadText(APP_CONFIG.id + '-' + item.id + '.ics', ics, 'text/calendar;charset=utf-8')){
-    toast('Calendar file saved', 'success');
-  } else {
-    toast('Could not create the calendar file.', 'error');
-  }
+  offerFile(APP_CONFIG.id + '-' + item.id + '.ics', ics, 'text/calendar;charset=utf-8')
+    .then(res => reportFileOffer(res, 'Calendar file'));
 }
 
 
@@ -7921,11 +8010,27 @@ function refreshRunningBlock(){
    SETTINGS — data ownership
    ========================================================= */
 function openDataSettings(){
-  renderDataStats();
+  /* The page opens first. Painting a summary is not a precondition for
+     reaching the export — that ordering is what turned one missing helper
+     into "I cannot get my data out". */
   pushOverlayHistory();
   openOverlay('dataOverlay');
+  try{ renderDataStats(); }catch(e){}
 }
 function closeDataSettings(){ closeOverlay('dataOverlay'); releaseOverlayHistory(); }
+
+/* One stat tile. This existed in the foundation's demo section and went out
+   with it when the demo was replaced — but renderDataStats() below, which is
+   foundation code that was KEPT, still called it. The result was a
+   ReferenceError thrown before openOverlay() ran, so the Backup & data page
+   simply never opened and there was no way to reach the export at all.
+
+   The .stat CSS was never removed, so this restores the markup it styles. */
+function statHtml(value, label){
+  return '<div class="stat">' +
+    '<div class="stat-value">' + escapeHtml(String(value)) + '</div>' +
+    '<div class="stat-label">' + escapeHtml(label) + '</div></div>';
+}
 
 function renderDataStats(){
   const el = document.getElementById('dataStats');
@@ -7948,20 +8053,18 @@ function exportData(){
   };
   Store.listKeys().forEach(k => {
     if(k.indexOf(KEYS.backupPrefix) === 0) return;
+    /* A half-typed capture is not data anybody asked to keep, and shipping it
+       inside a backup would restore someone's abandoned typing onto another
+       device weeks later. Drafts live outside committed data, and a backup is
+       committed data. */
+    if(k.indexOf('draft.') === 0) return;
     payload.data[k] = Store.get(k);
   });
-  try{
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = APP_CONFIG.id + '-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast('Backup exported', 'success');
-  }catch(e){
-    toast('Could not create the backup file.', 'error');
-  }
+  offerFile(
+    APP_CONFIG.id + '-backup-' + todayCivil() + '.json',
+    JSON.stringify(payload, null, 2),
+    'application/json'
+  ).then(res => reportFileOffer(res, 'Backup'));
 }
 
 function importData(input){
@@ -8016,10 +8119,15 @@ function mergeBackup(data){
     const raw = data[key];
     if(typeof raw !== 'string') return;
 
-    let incoming;
-    try{ incoming = JSON.parse(raw); }catch(e){ return; }
+    /* A value that is not JSON is not a broken value. Preferences are stored
+       as plain strings — the chosen theme is the four characters "dark" —
+       and parsing them throws. Returning here dropped every one of them from
+       every restore, silently, while the import still reported success. An
+       unparseable value is simply opaque: it takes the scalar path below. */
+    let incoming = null, parsed = true;
+    try{ incoming = JSON.parse(raw); }catch(e){ parsed = false; }
 
-    if(Array.isArray(incoming) && incoming.every(isRecord)){
+    if(parsed && Array.isArray(incoming) && incoming.every(isRecord)){
       collections++;
       const existing = Store.getJSON(key, []);
       const byId = new Map(Array.isArray(existing) ? existing.filter(isRecord).map(r => [r.id, r]) : []);
