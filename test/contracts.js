@@ -1010,8 +1010,17 @@ function testRelease(){
     c.APP_UPDATES.every(u => (u.newFeatures || []).length + (u.improvements || []).length +
                              (u.fixes || []).length > 0));
 
-  sub('the starter ships a minimal history, not an inherited one');
-  T('a small number of entries', c.APP_UPDATES.length <= 3, String(c.APP_UPDATES.length));
+  sub('a product accumulates its own history');
+  /* The starter asserted this list stayed SHORT, because a long one there
+     meant history inherited from somewhere else. A shipping product is the
+     opposite: every release adds an entry, and a list that stopped growing
+     would mean releases going out without one — which is how an app ends up
+     unable to invalidate its own cache. What still has to hold is that the
+     history is this product's own, which the seed-release check below covers. */
+  T('the history has entries', c.APP_UPDATES.length >= 1, String(c.APP_UPDATES.length));
+  T('and the newest one is the shipped version',
+    c.APP_UPDATES[0].version === c.APP_VERSION,
+    c.APP_UPDATES[0].version + ' vs ' + c.APP_VERSION);
   T('the authoring rules travel with the data', /AUTHORING A NEW ENTRY/.test(js()));
   T('and it says new products replace it', /New products replace this array wholesale/.test(js()));
 
