@@ -5,9 +5,9 @@
   "phase": null,
   "status": "stable",
   "needsQa": false,
-  "needsDecision": false,
+  "needsDecision": true,
   "currentTask": null,
-  "nextAction": null,
+  "nextAction": "Choose a host for background reminders and generate the VAPID keys yourself (PUSH-SETUP.md)",
   "blocker": null,
-  "updatedAt": "2026-09-28T17:32:44Z"
+  "updatedAt": "2026-09-28T20:18:11Z"
 }
