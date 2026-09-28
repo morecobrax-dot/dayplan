@@ -139,6 +139,37 @@ AUDIT → UNDERSTAND → IMPLEMENT → ADVERSARIAL VERIFY → DIFF AUDIT → SHI
     cache.
 26. **`npm run verify` must be green before any commit or push.**
 
+### Mission Control status
+
+`PROJECT-STATUS.json` at the repository root is this project's public status.
+Mission Control reads it from `main` on GitHub (raw.githubusercontent.com) and
+shows it on its hub. Update the file, and commit it with the work, at each of
+these milestones:
+
+- implementation completed
+- QA required
+- a decision or a blocker identified, or cleared
+- release verified — only after production has been checked, never on the
+  push alone
+
+Only pushed commits reach Mission Control. Work that is not committed and
+pushed does not appear there, whatever the file says locally.
+
+The file is public. Write short, plain summaries only: never a conversation or
+session link, a credential, a local path, private details or anything from a
+private repository. Write what the repository shows, leave a fact `null` when it
+is not known, and never infer a status from commit counts, tests or a version
+number.
+
+Schema 1, every key present: `schemaVersion` 1; `appId` `"dayplan"`;
+`version` and `phase` (text or null); `status`, one of `planning`, `building`,
+`release_ready`, `stable`, `paused`; `needsQa` and `needsDecision` (true or
+false); `currentTask`, `nextAction` and `blocker` (text or null — a blocker
+means the project is blocked); `updatedAt` (ISO 8601 UTC, the moment you
+changed the file). Limits: version 24 characters, phase 48, currentTask 280,
+nextAction 200, blocker 200. Mission Control refuses a file that breaks any
+rule and keeps showing the last valid one.
+
 ## Scope
 
 27. **A product-specific need stays in the product.** See the
