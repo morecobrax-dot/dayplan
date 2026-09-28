@@ -4,13 +4,22 @@
   "private": true,
   "description": "Plan your day on a timeline you can move.",
   "scripts": {
-    "verify": "node test/run.js verify",
+    "verify": "node scripts/project-status.js verify && node test/run.js verify",
     "test": "node test/run.js contracts",
     "config:sync": "node scripts/config.js sync",
     "config:verify": "node scripts/config.js verify",
-    "contamination": "node scripts/contamination.js"
+    "contamination": "node scripts/contamination.js",
+    "status": "node scripts/project-status.js verify"
   },
   "engines": {
     "node": ">=18"
+  },
+  "projectStatus": {
+    "appId": "dayplan",
+    "version": {
+      "file": "index.html",
+      "list": "const APP_UPDATES = [",
+      "pick": "first"
+    }
   }
 }
